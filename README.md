@@ -104,4 +104,3 @@ o	The system can be adapted to manage digital resources such as eBooks or PDFs. 
 o	Small community centres could use this system to manage shared resources like books, tools, or equipment. Admins would oversee the inventory, while community members borrow items as needed.
 
 By incorporating both user-friendly functionality and administrative tools, the Library Management System is a comprehensive solution for modernizing and streamlining library operations in various settings.
-![image](https://github.com/user-attachments/assets/71519ecb-0d6c-4bf4-bc51-46dfc7ecb9d0)
