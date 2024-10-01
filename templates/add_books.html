@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Book</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+            padding: 40px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #343a40;
+            margin-bottom: 25px;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        button {
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        input[type="text"],
+        input[type="number"] {
+            border: 1px solid #ced4da;
+        }
+        input[type="file"] {
+            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+        }
+        input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            padding: 16px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.02);
+        }
+        button:active {
+            background-color: #004085;
+            transform: scale(1);
+        }
+        .back-link {
+            display: inline-block;
+            text-align: center;
+            background-color: #6c757d;
+            color: #fff;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 25px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+        .back-link:hover {
+            background-color: #5a6268;
+        }
+        .flash-messages {
+            margin-top: 20px;
+            padding: 15px;
+        }
+        .flash-messages ul {
+            list-style: none;
+            padding: 0;
+        }
+        .flash-messages li {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .flash-messages li.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-messages li.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+                padding: 30px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            button, 
+            .back-link {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add a New Book</h1>
+
+        <!-- Form for manual book addition -->
+        <form method="POST" action="{{ url_for('add_books') }}" enctype="multipart/form-data">
+            <input type="text" name="title" placeholder="Title" required>
+            <input type="text" name="author" placeholder="Author" required>
+            <input type="number" name="total_copies" placeholder="Total Copies" required min="1">
+            <input type="file" name="image" accept="image/*">
+            <button type="submit">Add Book</button>
+        </form>
+
+        <!-- Form for Excel file upload -->
+        <form method="POST" action="{{ url_for('add_books') }}" enctype="multipart/form-data">
+            <input type="file" name="excel_file" accept=".xlsx" required>
+            <button type="submit">Upload Excel</button>
+        </form>
+
+        <!-- Back to Library button -->
+        <a href="{{ url_for('library') }}" class="back-link">Back to Library</a>
+
+        <!-- Flash messages section -->
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    <ul>
+                        {% for category, message in messages %}
+                            <li class="{{ category }}">
+                                {{ message }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

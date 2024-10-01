@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Books</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            padding: 20px 0;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #007bff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .search-form {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .search-form input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+            transition: border-color 0.3s;
+        }
+        .search-form input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .search-form button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-form button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        td {
+            font-size: 16px;
+            color: #555;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        img {
+            max-width: 100px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+        .delete-button:active {
+            background-color: #a71d2a;
+            transform: scale(0.98);
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .flash-messages {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .flash-messages .info {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .no-image {
+            color: #888;
+            font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .search-form input {
+                width: 100%;
+            }
+            .search-form button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+            table {
+                font-size: 14px;
+            }
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function deleteBooks() {
+            var selectedBookIds = [];
+            document.querySelectorAll('input[name="book_ids"]:checked').forEach(function (checkbox) {
+                selectedBookIds.push(checkbox.value);
+            });
+
+            if (selectedBookIds.length === 0) {
+                alert('Please select at least one book to delete.');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete the selected books?')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/delete_books';
+
+                selectedBookIds.forEach(function (bookId) {
+                    var bookIdInput = document.createElement('input');
+                    bookIdInput.type = 'hidden';
+                    bookIdInput.name = 'book_ids[]';
+                    bookIdInput.value = bookId;
+                    form.appendChild(bookIdInput);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('delete-btn').addEventListener('click', deleteBooks);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>View Books</h1>
+
+        <form method="GET" action="{{ url_for('view_books') }}" class="search-form">
+            <input type="text" name="search" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
+            <button type="submit">Search</button>
+        </form>
+
+        <form id="books-form">
+            <table>
+                <tr>
+                    {% if is_admin %}
+                    <th>Select</th>
+                    {% endif %}
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Image</th>
+                    <th>Total Copies</th>
+                    <th>Available Copies</th>
+                </tr>
+                {% for book in books %}
+                <tr>
+                    {% if is_admin %}
+                    <td><input type="checkbox" name="book_ids" value="{{ book.book_id }}"></td>
+                    {% endif %}
+                    <td>{{ book.book_id }}</td>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>
+                        {% if book.image_path %}
+                            <img src="{{ url_for('static', filename='images/' ~ book.image_path) }}" alt="{{ book.title }}">
+                        {% else %}
+                            <span class="no-image">No image available</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ book.total_copies }}</td>
+                    <td>{{ book.available_copies }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            {% if is_admin %}
+            <button id="delete-btn" class="delete-button">Delete Selected Books</button>
+            {% endif %}
+            <a href="{{ url_for('library') }}" class="back-button">Back to Library</a>
+
+        </form>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

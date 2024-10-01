@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Return Books</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        h1 {
+            text-align: center;
+            color: #343a40;
+            font-size: 32px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 16px;
+            text-align: left;
+            font-size: 16px;
+        }
+        th {
+            background-color: #007bff;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .flash-messages {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .flash-messages.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .flash-messages ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .flash-messages li {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .back-to-library {
+            text-decoration: none;
+            color: #ffffff;
+            background-color: #007bff;
+            padding: 15px 30px;
+            border-radius: 6px;
+            display: inline-block;
+            text-align: center;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        .back-to-library:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 28px;
+            }
+            table, th, td {
+                font-size: 14px;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            .back-to-library {
+                font-size: 16px;
+                padding: 12px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Return Books</h1>
+
+        <!-- Display flash messages -->
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <div class="flash-messages {% for category, _ in messages %}{{ category }}{% endfor %}">
+                    <ul>
+                        {% for category, message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('return_books') }}" method="POST">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Book ID</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        {% if role == 'admin' %}
+                            <th>Username</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for borrowed_book in borrowed_books %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="book_ids" value="{{ borrowed_book.book_id }}">
+                                {% if role == 'admin' %}
+                                    <input type="hidden" name="user_ids" value="{{ borrowed_book.user_id }}">
+                                {% endif %}
+                            </td>
+                            <td>{{ borrowed_book.book_id }}</td>
+                            <td>{{ borrowed_book.title }}</td>
+                            <td>{{ borrowed_book.author }}</td>
+                            <td>{{ borrowed_book.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ borrowed_book.due_date.strftime('%Y-%m-%d') }}</td>
+                            {% if role == 'admin' %}
+                                <td>{{ borrowed_book.username }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit">Return Selected Books</button>
+        </form>
+
+        <a href="{{ url_for('library') }}" class="back-to-library">Back to Library</a>
+    </div>
+</body>
+</html>

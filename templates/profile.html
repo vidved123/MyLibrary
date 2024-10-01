@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333; /* Added color for text */
+        }
+        .profile-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-top: 6px solid #007bff;
+            animation: fadeIn 0.5s ease-in-out;
+            box-sizing: border-box;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            background-color: #fff;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: relative; /* For tooltip positioning */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .confirmation-button {
+            background-color: #dc3545;
+        }
+        .confirmation-button:hover {
+            background-color: #c82333;
+        }
+        .back-button {
+            display: block;
+            background-color: #6c757d;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position above the tooltip */
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .profile-container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            button,
+            .back-button {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h1>Your Profile</h1>
+        <form action="{{ url_for('update_profile') }}" method="post">
+            <input type="hidden" name="user_id" value="{{ user[0] }}">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" value="{{ user[1] }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" value="{{ user[2] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="full_name">Full Name:</label>
+                <input type="text" id="full_name" name="full_name" value="{{ user[3] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="sex">Gender:</label>
+                <select id="sex" name="sex" required>
+                    <option value="M" {% if user[4] == 'M' %}selected{% endif %}>Male</option>
+                    <option value="F" {% if user[4] == 'F' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="mobile_number">Mobile Number:</label>
+                <input type="text" id="mobile_number" name="mobile_number" value="{{ user[5] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="country_code">Country Code:</label>
+                <input type="text" id="country_code" name="country_code" value="{{ user[6] }}" required>
+            </div>
+            <button type="submit">Update Profile</button>
+        </form>
+
+        <form action="{{ url_for('delete_profile') }}" method="post" style="margin-top: 20px;">
+            <input type="hidden" name="user_id" value="{{ user[0] }}">
+            <button type="submit" class="confirmation-button" onclick="return confirm('Are you sure you want to delete your profile?');">Delete Profile</button>
+        </form>
+
+        <a href="{{ url_for('dashboard') }}" class="back-button">Back to Dashboard</a>
+    </div>
+</body>
+</html>

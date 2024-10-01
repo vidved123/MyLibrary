@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .book-list-container {
+            background-color: #fff;
+            padding: 20px;
+            margin: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+
+        li:hover {
+            transform: translateY(-5px);
+        }
+
+        li span {
+            font-size: 18px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+            padding: 10px 20px;
+            background-color: #007bff;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        p {
+            color: #ff4c4c;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .book-list-container {
+                margin: 20px;
+                padding: 15px;
+            }
+
+            li {
+                padding: 15px;
+            }
+
+            a {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="book-list-container">
+        <h1>Available Books</h1>
+        {% if message %}
+            <p>{{ message }}</p>
+        {% endif %}
+        <ul>
+            {% for book in books %}
+                <li>
+                    <span>{{ book.title }} by {{ book.author }}</span>
+                    <a href="{{ url_for('borrow_books', book_id=book.id) }}">Borrow Book</a>
+                </li>
+            {% endfor %}
+        </ul>
+        <!-- Debugging output to check the books' data -->
+        <pre>{{ books | tojson(indent=2) }}</pre>
+    </div>
+</body>
+</html>

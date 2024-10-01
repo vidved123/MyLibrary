@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Roster</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f6f9fc, #cfd9df);
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 40px;
+            color: #333;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+        table {
+            width: 85%;
+            margin: 50px auto;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 16px 24px;
+            text-align: left;
+            font-size: 16px;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td {
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        tr:nth-child(even) td {
+            background-color: #eef2f7;
+        }
+        tr:hover td {
+            background-color: #d6e9f5;
+            transition: background-color 0.3s ease;
+        }
+        tr:hover td:hover {
+            cursor: pointer;
+        }
+        /* Button */
+        .button {
+            display: block;
+            width: fit-content;
+            padding: 12px 36px;
+            margin: 40px auto;
+            color: #ffffff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .button:hover {
+            background-color: #218838;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+        }
+        /* Responsive Table */
+        @media (max-width: 768px) {
+            table {
+                width: 95%;
+                font-size: 14px;
+            }
+            th, td {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Users Roster</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Country Code</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.mobile_number }}</td>
+                <td>{{ user.country_code }}</td>
+                <td>{{ user.role }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('dashboard') }}" class="button">Back to Dashboard</a>
+</body>
+</html>

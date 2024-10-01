@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 18px;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #4682b4;
+            font-size: 2.5em;
+            margin: 50px 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        p, a {
+            font-size: 1.125em;
+        }
+        a {
+            color: #4682b4;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .nav-buttons {
+            margin-top: 20px;
+        }
+        .nav-buttons a {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 1.125em;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .nav-buttons a:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.125em;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .container {
+            margin: 20px auto;
+            max-width: 900px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+        .welcome-text {
+            margin: 20px 0;
+            font-size: 1.25em;
+            color: #555;
+        }
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            p, a {
+                font-size: 1em;
+            }
+            .nav-buttons a {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+    <script>
+        function isAuthenticated() {
+            return !!localStorage.getItem('token');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            fetch('/logout', {
+                method: 'GET'
+            }).then(() => {
+                window.location.href = '/';
+            });
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error('Server error: ' + text);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    window.location.href = '/';
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with the login operation:', error);
+                alert('Login failed: ' + error.message);
+            });
+        }
+
+        function register() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const fullName = document.getElementById('fullName').value;
+            const sex = document.getElementById('sex').value;
+            const mobileNumber = document.getElementById('mobileNumber').value;
+            const countryCode = document.getElementById('countryCode').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username, email, full_name: fullName, sex, mobile_number: mobileNumber,
+                    country_code: countryCode, password, confirm_password: confirmPassword
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error('Server error: ' + text);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.message === 'Registration successful!') {
+                    window.location.href = '/login';
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with the registration operation:', error);
+                alert('Registration failed: ' + error.message);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const nav = document.querySelector('nav');
+            const profileUrl = "{{ url_for('profile') }}";
+            const loginUrl = "{{ url_for('login') }}";
+            const registerUrl = "{{ url_for('register') }}";
+
+            if (isAuthenticated()) {
+                nav.innerHTML = `<div class="nav-buttons">
+                                    <a href="${profileUrl}">Profile</a> |
+                                    <a href="#" onclick="logout()">Logout</a>
+                                  </div>`;
+            } else {
+                nav.innerHTML = `<div class="nav-buttons">
+                                    <a href="${loginUrl}">Login</a> |
+                                    <a href="${registerUrl}">Register</a>
+                                  </div>`;
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Welcome to the Library Home Page</h1>
+    <p class="welcome-text">Explore a world of knowledge at your fingertips!</p>
+    <nav></nav>
+    <div class="container">
+        <p>Please choose an option to get started:</p>
+        <!-- The buttons are now handled by the JavaScript -->
+    </div>
+</body>
+</html>

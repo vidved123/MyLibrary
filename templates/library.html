@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Library</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background: #007bff;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        p {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+        }
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .overdue-table thead {
+            background-color: #ff5722;
+        }
+        .overdue-table th {
+            color: white;
+        }
+        .action-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .action-buttons a {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 5px;
+            color: #fff;
+            background-color: #007bff;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .action-buttons a:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+            }
+            .action-buttons a {
+                padding: 10px;
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome, {{ username }}</h1>
+        <p>Total Books: {{ book_count }}</p>
+    </header>
+
+    {% if session.get('role') != 'admin' %}
+    <section>
+        <h2>Borrowed Books</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Book ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Borrowed Date</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in borrowed_books %}
+                <tr>
+                    <td>{{ book.book_id }}</td>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ book.due_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Overdue Books</h2>
+        <table class="overdue-table">
+            <thead>
+                <tr>
+                    <th>Book ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Borrowed Date</th>
+                    <th>Due Date</th>
+                    <th>Overdue Days</th>
+                    <th>Fine</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in borrowed_books %}
+                {% if book.overdue_days > 0 %}
+                <tr>
+                    <td>{{ book.book_id }}</td>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ book.due_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ book.overdue_days }}</td>
+                    <td>${{ book.fine }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    <div class="action-buttons">
+        {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('add_books') }}"><i class="fas fa-plus-circle"></i> Add Books</a>
+            <a href="{{ url_for('book_master') }}"><i class="fas fa-book"></i> Book Master</a>
+        {% endif %}
+        <a href="{{ url_for('view_books') }}"><i class="fas fa-eye"></i> View Books</a>
+        <a href="{{ url_for('borrow_books') }}"><i class="fas fa-book-reader"></i> Borrow Books</a>
+        <a href="{{ url_for('view_borrowed_books') }}"><i class="fas fa-file-alt"></i> View Borrowed Books</a>
+        <a href="{{ url_for('return_books') }}"><i class="fas fa-undo"></i> Return Books</a>
+        <a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    </div>
+
+    <footer>
+        <p>&copy; {{ year }} Your Library. All rights reserved.</p>
+    </footer>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // Listen for new_books event
+        socket.on('new_books', function(data) {
+            console.log(data.message);
+            // Reload the books page or make an AJAX call to fetch updated data
+            location.reload();
+        });
+    </script>
+</body>
+</html>
