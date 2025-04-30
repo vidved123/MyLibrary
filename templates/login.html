@@ -167,83 +167,101 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Login</h2>
-        <form id="loginForm" method="POST" action="/login">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-                <div id="suggestions" class="suggestions"></div>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-            <a href="#" class="forgot-password">Forgot your password?</a>
-            <ul id="error-list"></ul>
-        </form>
-    </div>
+  <div class="container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autocomplete="off" required />
+        <div id="suggestions" class="suggestions"></div>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+      <button type="submit">Login</button>
+      <a href="#" class="forgot-password">Forgot your password?</a>
+      <ul id="error-list"></ul>
+    </form>
+  </div>
 
-    <script>
-        document.getElementById('username').addEventListener('input', function() {
-            const query = this.value;
-            if (query.length < 2) {
-                document.getElementById('suggestions').innerHTML = '';
-                return;
+  <script>
+    // Autocomplete suggestions
+    const usernameInput = document.getElementById('username');
+    const suggestionsBox = document.getElementById('suggestions');
+
+    usernameInput.addEventListener('input', function () {
+      const query = this.value;
+      if (query.length < 2) {
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+
+      fetch(`/api/usernames?query=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(usernames => {
+          suggestionsBox.innerHTML = '';
+          usernames.forEach(username => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = username;
+            div.onclick = () => {
+              usernameInput.value = username;
+              suggestionsBox.innerHTML = '';
+            };
+            suggestionsBox.appendChild(div);
+          });
+        })
+        .catch(console.error);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!usernameInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.innerHTML = '';
+      }
+    });
+
+    // Login form submission
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const errorList = document.getElementById('error-list');
+      errorList.innerHTML = ''; // Clear previous errors
+
+      fetch('/login', {
+        method: 'POST',
+        body: formData
+      })
+        .then(async response => {
+          const contentType = response.headers.get('content-type');
+          const isJSON = contentType && contentType.includes('application/json');
+          const data = isJSON ? await response.json() : { message: await response.text() };
+
+          if (response.ok && data.token) {
+            localStorage.setItem('token', data.token);
+
+            // Store the user role (admin or not) in localStorage or sessionStorage
+            localStorage.setItem('role', data.role);  // Assuming your backend sends role along with the token.
+
+            // Redirect based on role (admin or user)
+            if (data.role === 'admin') {
+              window.location.href = '/admin-dashboard'; // Redirect to admin dashboard
+            } else {
+              window.location.href = '/dashboard'; // Redirect to normal user dashboard
             }
-
-            fetch(`/api/usernames?query=${query}`)
-                .then(response => response.json())
-                .then(usernames => {
-                    const suggestionsBox = document.getElementById('suggestions');
-                    suggestionsBox.innerHTML = '';
-                    usernames.forEach(username => {
-                        const div = document.createElement('div');
-                        div.className = 'suggestion-item';
-                        div.textContent = username;
-                        div.onclick = () => {
-                            document.getElementById('username').value = username;
-                            suggestionsBox.innerHTML = '';
-                        };
-                        suggestionsBox.appendChild(div);
-                    });
-                });
+          } else {
+            const li = document.createElement('li');
+            li.textContent = data.message || 'Login failed';
+            errorList.appendChild(li);
+          }
+        })
+        .catch(err => {
+          const li = document.createElement('li');
+          li.textContent = 'Something went wrong: ' + err.message;
+          errorList.appendChild(li);
         });
-
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);
-
-            fetch('/login', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.json().catch(() => {
-                        throw new Error('Response is not JSON');
-                    });
-                } else {
-                    return response.text().then(text => {
-                        throw new Error('Server error: ' + text);
-                    });
-                }
-            })
-            .then(data => {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    window.location.href = '/dashboard';
-                } else {
-                    alert('Login failed: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('There was a problem with the login operation:', error);
-                alert('Login failed: ' + error.message);
-            });
-        });
-    </script>
+    });
+  </script>
 </body>
 </html>
