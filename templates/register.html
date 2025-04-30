@@ -11,8 +11,8 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            padding: 10px; 
-            box-sizing: border-box; 
+            padding: 10px;
+            box-sizing: border-box;
         }
         .container {
             background-color: #ffffff;
@@ -33,17 +33,17 @@
             font-size: 20px; /* Adjusted font size */
         }
         label {
-            margin-bottom: 5px; 
+            margin-bottom: 5px;
             color: #333;
             font-size: 14px; /* Adjusted font size */
         }
-        input[type="text"], 
-        input[type="password"], 
-        input[type="email"], 
-        input[type="tel"], 
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="tel"],
         select {
             padding: 10px; /* Adjusted padding for better fit */
-            margin-bottom: 10px; 
+            margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             width: 100%; /* Full width in grid cells */
@@ -59,7 +59,7 @@
             outline: none;
         }
         input[type="submit"] {
-            padding: 10px 20px; 
+            padding: 10px 20px;
             background-color: #4caf50;
             color: white;
             border: none;
@@ -109,8 +109,8 @@
 
         <label for="sex">Sex:</label>
         <select id="sex" name="sex" required>
-            <option value="M">Male</option>
-            <option value="F">Female</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
         </select>
 
         <label for="mobile_number">Mobile Number:</label>
@@ -133,12 +133,12 @@
 
         <label for="role">Role:</label>
         <select id="role" name="role" required>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
         </select>
 
         <input type="submit" value="Register">
-        
+
         <ul id="error-list">
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
