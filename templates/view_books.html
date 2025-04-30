@@ -170,6 +170,7 @@
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Function to handle deleting selected books
         function deleteBooks() {
             var selectedBookIds = [];
             document.querySelectorAll('input[name="book_ids"]:checked').forEach(function (checkbox) {
@@ -199,8 +200,12 @@
             }
         }
 
+        // Ensuring event listener is added only if the delete button exists
         document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('delete-btn').addEventListener('click', deleteBooks);
+            var deleteButton = document.getElementById('delete-btn');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', deleteBooks);
+            }
         });
     </script>
 </head>
@@ -213,7 +218,7 @@
             <button type="submit">Search</button>
         </form>
 
-        <form id="books-form">
+        <form id="books-form" method="POST">
             <table>
                 <tr>
                     {% if is_admin %}
