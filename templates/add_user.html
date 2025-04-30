@@ -39,10 +39,10 @@
             margin-bottom: 6px;
             color: #555;
         }
-        input[type="text"], 
-        input[type="password"], 
-        input[type="email"], 
-        input[type="tel"], 
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="tel"],
         select {
             padding: 12px;
             margin-bottom: 20px;
@@ -52,7 +52,7 @@
             background-color: #f9f9f9;
             transition: border-color 0.3s ease;
         }
-        input:focus, 
+        input:focus,
         select:focus {
             border-color: #007bff;
             outline: none;
@@ -118,15 +118,17 @@
 <body>
     <div class="container">
         <h1>Add User</h1>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="message {{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
         {% endwith %}
+
         <form action="{{ url_for('add_user') }}" method="post">
             <label for="full_name">Full Name:</label>
             <input type="text" id="full_name" name="full_name" required>
@@ -148,15 +150,15 @@
 
             <label for="role">Role:</label>
             <select id="role" name="role">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
             </select>
 
             <button type="submit">Add User</button>
         </form>
 
         <div class="back-button">
-            <a href="{{ url_for('library') }}">Back to Library</a>
+            <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
         </div>
     </div>
 </body>
