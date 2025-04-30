@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile</title>
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -143,35 +146,42 @@
 <body>
     <div class="profile-container">
         <h1>Your Profile</h1>
-        <form action="{{ url_for('update_profile') }}" method="post">
+        <form action="{{ url_for('update_profile') }}" method="POST">
             <input type="hidden" name="user_id" value="{{ user[0] }}">
+
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" value="{{ user[1] }}" readonly>
             </div>
+
             <div class="form-group">
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" value="{{ user[2] }}" required>
             </div>
+
             <div class="form-group">
                 <label for="full_name">Full Name:</label>
                 <input type="text" id="full_name" name="full_name" value="{{ user[3] }}" required>
             </div>
+
             <div class="form-group">
                 <label for="sex">Gender:</label>
                 <select id="sex" name="sex" required>
-                    <option value="M" {% if user[4] == 'M' %}selected{% endif %}>Male</option>
-                    <option value="F" {% if user[4] == 'F' %}selected{% endif %}>Female</option>
+                    <option value="MALE" {% if user[4] == 'MALE' %}selected{% endif %}>Male</option>
+                    <option value="FEMALE" {% if user[4] == 'FEMALE' %}selected{% endif %}>Female</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="mobile_number">Mobile Number:</label>
                 <input type="text" id="mobile_number" name="mobile_number" value="{{ user[5] }}" required>
             </div>
+
             <div class="form-group">
                 <label for="country_code">Country Code:</label>
                 <input type="text" id="country_code" name="country_code" value="{{ user[6] }}" required>
             </div>
+
             <button type="submit">Update Profile</button>
         </form>
 
