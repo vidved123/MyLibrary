@@ -28,6 +28,31 @@
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
         }
+        form {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1rem;
+            width: 60%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button[type="submit"] {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -106,6 +131,12 @@
     <div class="container">
         <h1>View Borrowed Books</h1>
 
+        <!-- Search bar -->
+        <form action="{{ url_for('view_borrowed_books') }}" method="GET">
+            <input type="text" name="search" placeholder="{% if role == 'ADMIN' %}Search by User ID{% else %}Search by Book ID, Title, or Author{% endif %}" value="{{ search_query }}">
+            <button type="submit">Search</button>
+        </form>
+
         <table>
             <thead>
                 <tr>
@@ -114,24 +145,30 @@
                     <th>Author</th>
                     <th>Borrowed Date</th>
                     <th>Due Date</th>
-                    {% if role == 'admin' %}
+                    {% if role == 'ADMIN' %}
                         <th>Username</th>
                     {% endif %}
                 </tr>
             </thead>
             <tbody>
-                {% for borrowed_book in borrowed_books %}
+                {% if borrowed_books %}
+                    {% for borrowed_book in borrowed_books %}
+                        <tr>
+                            <td>{{ borrowed_book.book_id }}</td>
+                            <td>{{ borrowed_book.title }}</td>
+                            <td>{{ borrowed_book.author }}</td>
+                            <td>{{ borrowed_book.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ borrowed_book.due_date.strftime('%Y-%m-%d') }}</td>
+                            {% if role == 'ADMIN' %}
+                                <td>{{ borrowed_book.username }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                {% else %}
                     <tr>
-                        <td>{{ borrowed_book.book_id }}</td>
-                        <td>{{ borrowed_book.title }}</td>
-                        <td>{{ borrowed_book.author }}</td>
-                        <td>{{ borrowed_book.borrowed_date.strftime('%Y-%m-%d') }}</td>
-                        <td>{{ borrowed_book.due_date.strftime('%Y-%m-%d') }}</td>
-                        {% if role == 'admin' %}
-                            <td>{{ borrowed_book.username }}</td>
-                        {% endif %}
+                        <td colspan="{{ 6 if role == 'ADMIN' else 5 }}" style="text-align: center;">No borrowed books found.</td>
                     </tr>
-                {% endfor %}
+                {% endif %}
             </tbody>
         </table>
 
