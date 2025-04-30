@@ -114,7 +114,8 @@
         <p>Total Books: {{ book_count }}</p>
     </header>
 
-    {% if session.get('role') != 'admin' %}
+    {% if session.get('user_id') %}
+    {% if user_role != 'ADMIN' %}
     <section>
         <h2>Borrowed Books</h2>
         <table>
@@ -171,9 +172,10 @@
         </table>
     </section>
     {% endif %}
+    {% endif %}
 
     <div class="action-buttons">
-        {% if session.get('role') == 'admin' %}
+        {% if user_role == 'ADMIN' %}
             <a href="{{ url_for('add_books') }}"><i class="fas fa-plus-circle"></i> Add Books</a>
             <a href="{{ url_for('book_master') }}"><i class="fas fa-book"></i> Book Master</a>
         {% endif %}
@@ -192,10 +194,8 @@
     <script type="text/javascript">
         var socket = io.connect('http://' + document.domain + ':' + location.port);
 
-        // Listen for new_books event
         socket.on('new_books', function(data) {
             console.log(data.message);
-            // Reload the books page or make an AJAX call to fetch updated data
             location.reload();
         });
     </script>
