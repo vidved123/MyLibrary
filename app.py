@@ -8,6 +8,7 @@ from hashlib import sha256
 from logging.handlers import RotatingFileHandler
 from uuid import uuid4
 
+import bcrypt
 import flask_socketio
 import flask_sqlalchemy
 import jwt
@@ -25,7 +26,7 @@ from flask_redis import FlaskRedis
 from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from psycopg2 import DatabaseError, ProgrammingError
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
 os.environ['FLASK_ENV'] = 'development'
@@ -33,7 +34,6 @@ os.environ['FLASK_ENV'] = 'development'
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
-
 
 app = Flask(__name__, static_folder='static')
 
@@ -44,12 +44,13 @@ limiter = Limiter(
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = '12345678'
+app.config['MYSQL_PASSWORD'] = 'foulae0101@'
 app.config['MYSQL_DB'] = 'library'
 app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'  # Replace it with your JWT secret key
 app.config['UNIVERSAL_SECRET_KEY'] = 'your_universal_secret_key'  # Replace it with your Universal secret key
 app.config['SECRET_KEY'] = 'your-super-secret-key'
 app.config['REDIS_URL'] = 'redis://localhost:6379/0'  # Replace it with your Redis URL
+app.config['ENV'] = os.getenv('FLASK_ENV', 'development')
 
 
 
@@ -63,7 +64,7 @@ def image_to_base64(image_filename):
             return base64.b64encode(image_file.read()).decode('utf-8')
     except FileNotFoundError:
         return None
-    
+
 
 redis_store = FlaskRedis(app)
 
@@ -73,13 +74,11 @@ app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'images')
 # Optionally, you can also limit the allowed file extensions
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
-
-
 # Configure MySQL connection
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '12345678',
+    'password': 'foulae0101@',
     'database': 'library'
 }
 
@@ -87,7 +86,7 @@ db_config = {
 connection = pymysql.connect(
     host='localhost',
     user='root',
-    password='12345678',
+    password='foulae0101@',
     db='library',
     cursorclass=pymysql.cursors.DictCursor
 )
@@ -106,12 +105,11 @@ app.logger.setLevel(logging.DEBUG)
 logger.addHandler(log_handler)
 
 
-
 def get_db_connection():
     return pymysql.connect(
         host='localhost',
         user='root',
-        password='12345678',
+        password='foulae0101@',
         db='library',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
@@ -227,59 +225,62 @@ def login():
         cursor = conn.cursor()
         cursor.execute('SELECT id, password, role FROM users WHERE username = %s', (username,))
         user = cursor.fetchone()
-
         cursor.close()
         conn.close()
 
-        if user and check_password_hash(user[1], password):
-            user_id = user[0]
-            role = user[2]
-            session_id = str(uuid4())
+        if user:
+            user_id, hashed_password, role = user  # Fetch the role along with the id and password
 
-            # Create JWT token and universal token
-            token = jwt.encode({
-                'user_id': user_id,
-                'session_id': session_id,
-                'exp': datetime.utcnow() + timedelta(hours=1)
-            }, app.config['JWT_SECRET_KEY'], algorithm='HS256')
+            # Compare bcrypt hashed password
+            if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+                session_id = str(uuid4())
 
-            universal_token = jwt.encode({
-                'user_id': user_id,
-                'exp': datetime.utcnow() + timedelta(days=2)
-            }, app.config['UNIVERSAL_SECRET_KEY'], algorithm='HS256')
+                # Create tokens
+                token = jwt.encode({
+                    'user_id': user_id,
+                    'session_id': session_id,
+                    'exp': datetime.utcnow() + timedelta(hours=1)
+                }, app.config['JWT_SECRET_KEY'], algorithm='HS256')
 
-            # Log tokens for debugging
-            logger.info(f'Token: {token}')
-            logger.info(f'Universal Token: {universal_token}')
+                universal_token = jwt.encode({
+                    'user_id': user_id,
+                    'exp': datetime.utcnow() + timedelta(days=2)
+                }, app.config['UNIVERSAL_SECRET_KEY'], algorithm='HS256')
 
-            # Store session ID and token hash in Redis
-            token_hash = sha256(token.encode()).hexdigest()
-            redis_store.setex(session_id, timedelta(hours=2), token_hash)
+                # Log tokens for debugging
+                logger.info(f'Token: {token}')
+                logger.info(f'Universal Token: {universal_token}')
 
-            # Store session ID, user ID, and role in the session
-            session['session_id'] = session_id
-            session['user_id'] = user_id
-            session['role'] = role  # Ensure role is set in the session
+                # Store session token hash in Redis
+                token_hash = sha256(token.encode()).hexdigest()
+                redis_store.setex(session_id, timedelta(hours=2), token_hash)
 
-            # Create response with tokens as cookies
-            response = make_response(jsonify({'token': token}))
-            response.set_cookie('token', token, httponly=True, secure=True)
-            response.set_cookie('universal_token', universal_token, httponly=True, secure=True)
+                # Store user session and role in Flask session
+                session['session_id'] = session_id
+                session['user_id'] = user_id
+                session['role'] = role  # Store the role in the session
 
-            return response
+                # Return response with cookies
+                secure_cookie = app.config['ENV'] == 'production'
+                response = make_response(jsonify({'token': token}))
+                response.set_cookie('token', token, httponly=True, secure=secure_cookie)
+                response.set_cookie('universal_token', universal_token, httponly=True, secure=secure_cookie)
+
+                return response
 
         logger.warning('Invalid credentials provided')
         return jsonify({'message': 'Invalid credentials'}), 403
 
-    # GET method: Fetch all usernames to suggest on login page
+    # Handle GET request - return login page with usernames
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT username FROM users')
+    cursor.execute('SELECT username FROM users LIMIT 50')  # Optional limit for efficiency
     usernames = [row[0] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
 
     return render_template('login.html', usernames=usernames)
+
 
 
 
@@ -293,9 +294,8 @@ def api_usernames():
     cursor.close()
     conn.close()
     return jsonify(usernames)
-    
 
-# registration route
+
 @app.route('/register', methods=['POST', 'GET'])
 def register():
     if request.method == 'POST':
@@ -327,7 +327,8 @@ def register():
             logger.warning('Password does not meet complexity requirements')
             return render_template('register.html', data=data, error='Password does not meet complexity requirements!')
 
-        hashed_password = generate_password_hash(password)
+        # ✅ Hash password using bcrypt
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         conn = get_db()
         cursor = conn.cursor()
@@ -367,48 +368,66 @@ def register():
     # On GET request, render the registration form with empty fields
     return render_template('register.html', data={})
 
-# token used in verification
+
 def token_required(f):
     @wraps(f)
     def decorator(*args, **kwargs):
-        # Check for both tokens
         token = request.cookies.get('token')
         universal_token = request.cookies.get('universal_token')
 
         if not token and not universal_token:
-            logger.warning('Both tokens are missing')
-            return jsonify({'message': 'Token is missing!'}), 401
+            logger.warning('No token provided in cookies.')
+            return jsonify({'message': 'Authentication token is missing.'}), 401
+
+        user_id = None
 
         try:
             if token:
+                logger.debug('Decoding session-specific JWT token...')
                 data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
                 session_id = data.get('session_id')
+
+                if not session_id:
+                    logger.warning('Session ID missing inside token payload.')
+                    return jsonify({'message': 'Invalid token structure.'}), 401
+
                 token_hash = redis_store.get(session_id)
+                if not token_hash:
+                    logger.warning(f'No session found in Redis for session_id: {session_id}')
+                    return jsonify({'message': 'Session expired or invalid.'}), 401
 
-                if not token_hash or token_hash.decode() != sha256(token.encode()).hexdigest():
-                    logger.warning('Invalid or expired session')
-                    return jsonify({'message': 'Invalid or expired session!'}), 401
+                if token_hash.decode() != sha256(token.encode()).hexdigest():
+                    logger.warning('Token hash mismatch with Redis value.')
+                    return jsonify({'message': 'Session validation failed.'}), 401
 
-                user_id = data['user_id']
+                user_id = data.get('user_id')
+                logger.debug(f'Authenticated user_id from session token: {user_id}')
 
             elif universal_token:
+                logger.debug('Decoding universal JWT token...')
                 data = jwt.decode(universal_token, app.config['UNIVERSAL_SECRET_KEY'], algorithms=['HS256'])
-                user_id = data['user_id']
+                user_id = data.get('user_id')
+                logger.debug(f'Authenticated user_id from universal token: {user_id}')
+
+            if user_id is None:
+                logger.warning('User ID not found after decoding tokens.')
+                return jsonify({'message': 'User authentication failed.'}), 401
 
         except jwt.ExpiredSignatureError:
-            logger.warning('Token has expired')
-            return jsonify({'message': 'Token has expired!'}), 401
-        except jwt.InvalidTokenError:
-            logger.warning('Invalid token')
-            return jsonify({'message': 'Invalid token!'}), 401
+            logger.warning('JWT token has expired.')
+            return jsonify({'message': 'Token expired. Please login again.'}), 401
+
+        except jwt.InvalidTokenError as e:
+            logger.error(f'Invalid JWT token: {e}')
+            return jsonify({'message': 'Invalid token.'}), 401
+
+        except Exception as e:
+            logger.error(f'Unexpected error during token validation: {e}', exc_info=True)
+            return jsonify({'message': 'Authentication error.'}), 500
 
         return f(user_id, *args, **kwargs)
 
     return decorator
-
-
-
-
 
 
 # Dashboard route
@@ -419,17 +438,19 @@ def dashboard(user_id):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     try:
-        logger.debug('Fetching total number of books...')
+        logger.debug(f'Fetching dashboard data for user_id={user_id}')
+
+        # Fetch total number of books
         cursor.execute('SELECT COUNT(*) AS total FROM books')
-        total_books = cursor.fetchone()['total']
-        logger.debug(f'Total books: {total_books}')
+        total_books_result = cursor.fetchone()
+        total_books = total_books_result['total'] if total_books_result else 0
 
-        logger.debug('Fetching total borrowed books for user...')
+        # Fetch total borrowed books for user
         cursor.execute('SELECT COUNT(*) AS total FROM borrowed_books WHERE user_id = %s', (user_id,))
-        total_borrowed_books = cursor.fetchone()['total']
-        logger.debug(f'Total borrowed books: {total_borrowed_books}')
+        total_borrowed_result = cursor.fetchone()
+        total_borrowed_books = total_borrowed_result['total'] if total_borrowed_result else 0
 
-        logger.debug('Fetching borrowed books data...')
+        # Fetch borrowed books data
         cursor.execute('''
             SELECT b.title, b.author, bb.borrowed_date
             FROM borrowed_books bb
@@ -437,19 +458,25 @@ def dashboard(user_id):
             WHERE bb.user_id = %s
         ''', (user_id,))
         borrowed_books = cursor.fetchall()
-        logger.debug(f'Borrowed books data: {borrowed_books}')
 
-        logger.debug('Fetching user role...')
-        cursor.execute('SELECT role FROM users WHERE id = %s', (user_id,))
-        user_role = cursor.fetchone()['role']
-        logger.debug(f'User role: {user_role}')
+        # Fetch user info (including username and role)
+        cursor.execute('SELECT username, role FROM users WHERE id = %s', (user_id,))
+        user_info = cursor.fetchone()
+
+        if user_info:
+            username = user_info['username']
+            user_role = user_info['role']
+        else:
+            username = 'Guest'
+            user_role = 'guest'
 
     except Exception as e:
-        logger.error(f'An error occurred while fetching dashboard data: {e}')
+        logger.error(f'An error occurred while fetching dashboard data: {e}', exc_info=True)
         flash('An error occurred while fetching dashboard data.', 'error')
         borrowed_books = []
         total_books = 0
         total_borrowed_books = 0
+        username = 'Guest'
         user_role = 'guest'
 
     finally:
@@ -460,16 +487,23 @@ def dashboard(user_id):
         'total_books': total_books,
         'total_borrowed_books': total_borrowed_books,
         'borrowed_books': borrowed_books,
+        'username': username,
         'user_role': user_role
     }
 
-    # Debug logging to check what data is being sent to the template
-    logger.debug(f'Dashboard data being sent to template: {dashboard_data}')
-
     return render_template('dashboard.html', data=dashboard_data)
+
+
+
+
 
 @app.route('/add_user', methods=['GET', 'POST'])
 def add_user():
+    # Check if the current user has an 'ADMIN' role
+    if 'role' not in session or session['role'] != 'ADMIN':
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('library'))  # Redirect to the library or another page for non-admins
+
     if request.method == 'POST':
         # Extract form data
         full_name = request.form['full_name']
@@ -481,7 +515,7 @@ def add_user():
         role = request.form['role']
 
         # Hash the password
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        hashed_password = generate_password_hash(password, method='bcrypt')
 
         # Insert the user into the database
         connection = get_db_connection()
@@ -508,16 +542,15 @@ def add_user():
     return render_template('add_user.html')
 
 
-
 @app.route('/delete_user', methods=['GET', 'POST'])
 def delete_user():
     # Check if the user is an admin (role check)
-    if 'role' in session and session['role'] == 'admin':
+    if 'role' in session and session['role'].upper() == 'ADMIN':
         connection = get_db_connection()
         cursor = connection.cursor()
         try:
             # Fetch users from the database, including the 'full_name' column
-            cursor.execute("SELECT id, username, full_name FROM users")  
+            cursor.execute("SELECT id, username, full_name FROM users")
             users = cursor.fetchall()
         except Exception as e:
             flash(f'Error fetching users: {str(e)}', 'danger')
@@ -551,17 +584,17 @@ def delete_user():
 
 
 
-
-
-
 # viewing profile route
 @app.route('/profile', methods=['GET'])
 @token_required
 def profile(user_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, username, email, full_name, sex, mobile_number, country_code FROM users WHERE id = %s',
-                   (user_id,))
+    cursor.execute('''
+        SELECT id, username, email, full_name, sex, mobile_number, country_code
+        FROM users
+        WHERE id = %s
+    ''', (user_id,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -569,11 +602,17 @@ def profile(user_id):
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    return render_template('profile.html', user=user)
+    # Force fresh rendering with no caching
+    response = make_response(render_template('profile.html', user=user))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 
 @app.route('/view_users_roster', methods=['GET'])
 def view_users_roster():
-    if 'role' not in session or session['role'] != 'admin':
+    if 'role' not in session or session['role'].upper() != 'ADMIN':
         flash('You do not have permission to view this page.', 'danger')
         return redirect(url_for('dashboard'))
 
@@ -582,8 +621,9 @@ def view_users_roster():
     query = "SELECT id, username, full_name, email, mobile_number, country_code, role FROM users"
     cursor.execute(query)
     users = cursor.fetchall()
-    db.close()  # Don't forget to close the connection after you're done
+    db.close()  # Remember to close the connection after you're done
     return render_template('users_roster.html', users=users)
+
 
 
 # updating profile route
@@ -662,7 +702,7 @@ def logout(user_id):
     if session_id:
         redis_store.delete(session_id)  # Delete token from Redis
     session.clear()  # Clear the session
-    
+
     response = make_response(jsonify({'message': 'Logged out successfully'}))
     response.delete_cookie('token')  # Delete session token cookie
     response.delete_cookie('universal_token')  # Delete universal token cookie
@@ -671,13 +711,16 @@ def logout(user_id):
 
 # library app routes
 
-# library home page route
+# Route to the library page
 @app.route('/library')
-@token_required
-def library(user_id):
+def library():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))  # Redirect to login page if user is not logged in
+
     try:
         conn = get_db_connection()
-        with conn.cursor(pymysql.cursors.DictCursor) as cursor:  # Use DictCursor here
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             # Fetch the total number of books
             cursor.execute("SELECT COUNT(*) AS book_count FROM books")
             result = cursor.fetchone()
@@ -694,10 +737,11 @@ def library(user_id):
             borrowed_books = cursor.fetchall()
             logger.info(f"Borrowed books fetched for user_id {user_id}: {borrowed_books}")
 
-            # Fetch the username for the user_id
-            cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+            # Fetch the username and role for the user_id
+            cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
             user_result = cursor.fetchone()
             username = user_result['username'] if user_result else 'Guest'
+            user_role = user_result['role'] if user_result else 'USER'  # Default to USER if role is not found
 
             # Fine calculation settings
             fine_per_day = 10
@@ -708,20 +752,18 @@ def library(user_id):
                 borrowed_date = book['borrowed_date']
                 due_date = book['due_date']
 
-                # Ensure the due_date is a date object
-                if not isinstance(due_date, date):
-                    try:
-                        due_date = datetime.strptime(due_date, '%Y-%m-%d').date()
-                    except ValueError as e:
-                        logger.error(f"Invalid due_date format for book_id {book['book_id']}: {due_date}. Error: {e}")
-                        continue
+                if isinstance(borrowed_date, datetime):
+                    borrowed_date = borrowed_date.date()
+                if isinstance(due_date, datetime):
+                    due_date = due_date.date()
 
                 overdue_days = (current_date - due_date).days if current_date > due_date else 0
                 fine = overdue_days * fine_per_day if overdue_days > 0 else 0
 
+                book['borrowed_date'] = borrowed_date  # Ensure template has `.strftime()`-able value
+                book['due_date'] = due_date
                 book['overdue_days'] = overdue_days
                 book['fine'] = fine
-
                 logger.info(f"Calculated overdue days: {overdue_days}, Fine: {fine} for book_id {book['book_id']}")
 
     except Exception as e:
@@ -731,7 +773,9 @@ def library(user_id):
     finally:
         conn.close()
 
-    return render_template('library.html', book_count=book_count, borrowed_books=borrowed_books, user_id=user_id, username=username)
+    return render_template('library.html', book_count=book_count, borrowed_books=borrowed_books, 
+                           username=username, user_role=user_role)
+
 
 
 
@@ -750,7 +794,7 @@ def book(book_id):
         if book:
             logger.info(f"Book found: {book}")
             return jsonify({'title': book[0], 'author': book[1]}), 200
-        
+
         logger.warning(f"Book not found for book_id: {book_id}")
         return jsonify({'message': 'Book not found'}), 404
     except Exception as e:
@@ -791,21 +835,21 @@ def book_master(user_id):
     return render_template('book_master.html', books=books)
 
 
-
-
-
 socketio = SocketIO(app)
+
 
 # Notify clients when new books are added
 def notify_clients_new_books():
     socketio.emit('new_books', {'message': 'New books have been added!'})
+
 
 # Route for adding books, with support for Excel file upload
 @app.route('/add_books', methods=['GET', 'POST'])
 def add_books():
     role = session.get('role')
 
-    if role != 'admin':
+    # Convert the role to lowercase before comparison to avoid case-sensitivity issues
+    if role is None or role.lower() != 'admin':
         flash('You do not have permission to add books.', 'error')
         return redirect(url_for('library'))
 
@@ -857,7 +901,7 @@ def add_books():
                             INSERT INTO inventory (book_id, status)
                             VALUES (%s, 'available')
                         ''', (book_id,))
-                    
+
                     # Update total and available copies in the books table after each addition
                     cursor.execute('''
                         UPDATE books
@@ -895,64 +939,70 @@ def add_books():
 def handle_connect():
     print('Client connected')
 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
+
 
 # WebSocket events
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
 
 
-
 @app.route('/view_books', methods=['GET'])
-@token_required  # Ensure that you have the token_required decorator to check user authentication
+@token_required  # Ensure the user is authenticated
 def view_books(user_id):
     search_query = request.args.get('search', '')
 
-    # Establish a database connection
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    try:
+        # Establish a database connection
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
 
-    # SQL Query with optional search filter
-    sql_query = """
-    SELECT 
-        b.id AS book_id,
-        b.title,
-        b.author,
-        COALESCE(bi.image_path, 'default_image.jpg') AS image_path, 
-        b.total_copies,
-        b.available_copies
-    FROM 
-        books AS b
-    LEFT JOIN 
-        book_images AS bi ON b.id = bi.book_id
-    WHERE 
-        b.title LIKE %s OR b.author LIKE %s
-    ORDER BY 
-        b.id;
-    """
-    
-    cursor.execute(sql_query, ('%' + search_query + '%', '%' + search_query + '%'))
-    books = cursor.fetchall()
+        # SQL Query with optional search filter
+        sql_query = """
+        SELECT 
+            b.id AS book_id,
+            b.title,
+            b.author,
+            COALESCE(bi.image_path, 'default.jpg') AS image_path, 
+            b.total_copies,
+            b.available_copies
+        FROM 
+            books AS b
+        LEFT JOIN 
+            book_images AS bi ON b.id = bi.book_id
+        WHERE 
+            b.title LIKE %s OR b.author LIKE %s
+        ORDER BY 
+            b.id;
+        """
 
-    cursor.close()
-    connection.close()
+        cursor.execute(sql_query, ('%' + search_query + '%', '%' + search_query + '%'))
+        books = cursor.fetchall()
 
-    # Check if the user is an admin
+    except mysql.connector.Error as err:
+        # Handle database connection errors
+        print(f"Error: {err}")
+        books = []  # In case of an error, send an empty list
+    finally:
+        # Ensure that the cursor and connection are closed even if an exception occurs
+        cursor.close()
+        connection.close()
+
+    # Check if the user is an admin (role stored as USER/ADMIN)
     role = session.get('role')  # Retrieve user role from the session
-    is_admin = (role == 'admin')
+    is_admin = (role == 'ADMIN')  # Check if the user role is ADMIN
 
+    # Render the view_books page with the books and role information
     return render_template('view_books.html', books=books, search_query=search_query, is_admin=is_admin)
-
-
-
-
 
 
 
@@ -964,7 +1014,7 @@ def delete_books(user_id):
     role = session.get('role')
 
     # Only admins are allowed to delete books
-    if role != 'admin':
+    if role != 'ADMIN':
         flash('You do not have permission to delete books.', 'error')
         return redirect(url_for('view_books'))
 
@@ -999,7 +1049,8 @@ def delete_books(user_id):
                 # If there are available copies, decrement the count
                 if available_copies > 0:
                     new_available_copies = available_copies - 1
-                    cursor.execute('UPDATE books SET available_copies = %s WHERE id = %s', (new_available_copies, book_id))
+                    cursor.execute('UPDATE books SET available_copies = %s WHERE id = %s',
+                                   (new_available_copies, book_id))
 
                     # Optional: If no copies remain, delete the book from inventory
                     if new_available_copies == 0 and total_copies == 1:
@@ -1042,76 +1093,113 @@ def is_book_available(book_id):
         return False
 
 
+@app.route('/verify_user', methods=['POST'])
+@token_required
+def verify_user(user_id):
+    user_id = request.form.get('user_id')
+    
+    if not user_id:
+        return jsonify({"exists": False}), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    try:
+        # Verify if the user ID exists in the users table
+        cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
+        user = cursor.fetchone()
+
+        if user:
+            return jsonify({"exists": True})
+        else:
+            return jsonify({"exists": False})
+
+    except pymysql.MySQLError as e:
+        return jsonify({"exists": False, "error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 # Borrowing books route
 @app.route('/borrow', methods=['GET', 'POST'])
 @token_required
 def borrow_books(user_id):
     search_query = request.args.get('search', '')
-    user_id = session.get('user_id')
-    role = session.get('role')
+    role = session.get('role')  # Fetch the role from the session
 
     if request.method == 'POST':
-        # Get all selected book IDs from the form
-        book_ids = request.form.getlist('book_ids[]')  # Expecting multiple book IDs as a list
-        # Only prompt for user_id if the role is admin
-        target_user_id = request.form.get('user_id') if role == 'admin' else user_id
+        book_ids = request.form.getlist('book_ids[]')
+        target_user_id = request.form.get('user_id') if role == 'ADMIN' else user_id  # Admin selects user ID for borrowing
 
-        # Check if user is logged in
         if not target_user_id:
             flash('You must be logged in to borrow a book.', 'error')
             return redirect(url_for('borrow_books'))
 
-        # Validate that at least one book ID is provided
         if not book_ids or not all(book_id.isdigit() for book_id in book_ids):
             flash('Invalid book ID(s).', 'error')
             return redirect(url_for('borrow_books'))
 
-        # Process each book ID separately
+        if len(book_ids) > 3:
+            flash('You can borrow a maximum of 3 books at a time.', 'error')
+            return redirect(url_for('borrow_books'))
+
         conn = None
         cursor = None
+        borrowed_count = 0
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
 
+            # Admin: Validate the user ID exists
+            if role == 'ADMIN':
+                cursor.execute('SELECT id FROM users WHERE id = %s', (target_user_id,))
+                user_exists = cursor.fetchone()
+                if not user_exists:
+                    flash(f'User ID {target_user_id} does not exist.', 'error')
+                    return redirect(url_for('borrow_books'))
+
+            # Loop through selected books and borrow them
             for book_id in book_ids:
-                book_id = int(book_id)  # Convert to integer
-                
-                # Check if user has already borrowed a copy of this book
+                if borrowed_count >= 3:
+                    break  # Limit to 3 books
+
+                book_id = int(book_id)
+
+                # Check if the book is already borrowed by this user
                 cursor.execute('''
-                    SELECT COUNT(*) as borrow_count 
-                    FROM borrowed_books 
+                    SELECT COUNT(*) AS borrow_count
+                    FROM borrowed_books
                     WHERE book_id = %s AND user_id = %s
                 ''', (book_id, target_user_id))
                 result = cursor.fetchone()
-                borrow_count = result['borrow_count'] if result else 0
-
-                if borrow_count >= 1:
-                    flash(f'You have already borrowed a copy of book ID {book_id}.', 'error')
+                if result and result['borrow_count'] >= 1:
+                    flash(f'Book ID {book_id} is already borrowed.', 'error')
                     continue
 
-                # Check for available copies of the book
+                # Check availability of the book in inventory
                 cursor.execute('''
-                    SELECT COUNT(*) as available_copies
+                    SELECT COUNT(*) AS available_copies
                     FROM inventory
                     WHERE book_id = %s AND status = 'available'
                 ''', (book_id,))
                 result = cursor.fetchone()
-                available_copies = result['available_copies'] if result else 0
-
-                if available_copies < 1:
-                    flash(f'No available copies to borrow for book ID {book_id}.', 'error')
+                if not result or result['available_copies'] < 1:
+                    flash(f'No available copies for Book ID {book_id}.', 'error')
                     continue
 
-                # Borrow one copy of the book
+                # Borrow the book
                 borrowed_date = datetime.now()
                 due_date = borrowed_date + timedelta(days=14)
 
+                # Insert the borrowing record into the borrowed_books table
                 cursor.execute('''
                     INSERT INTO borrowed_books (user_id, book_id, borrowed_date, due_date)
                     VALUES (%s, %s, %s, %s)
                 ''', (target_user_id, book_id, borrowed_date, due_date))
 
-                # Update the inventory status to 'borrowed'
+                # Update inventory to mark the book as borrowed
                 cursor.execute('''
                     UPDATE inventory
                     SET status = 'borrowed'
@@ -1119,20 +1207,28 @@ def borrow_books(user_id):
                     LIMIT 1
                 ''', (book_id,))
 
-                # Update the total and available copies in the books table
+                # Update available_copies in the books table
                 cursor.execute('''
                     UPDATE books
                     SET available_copies = available_copies - 1
                     WHERE id = %s
                 ''', (book_id,))
 
+                borrowed_count += 1
+
+            # Commit all changes to the database
             conn.commit()
-            flash('Selected books borrowed successfully.', 'success')
+
+            # Provide feedback on the borrowing process
+            if borrowed_count > 0:
+                flash(f'{borrowed_count} book(s) successfully borrowed.', 'success')
+            else:
+                flash('No books were borrowed.', 'error')
 
         except pymysql.MySQLError as e:
             if conn:
-                conn.rollback()
-            flash(f'An error occurred: {e}', 'error')
+                conn.rollback()  # Rollback on error
+            flash(f'Database error: {e}', 'error')
         finally:
             if cursor:
                 cursor.close()
@@ -1142,13 +1238,15 @@ def borrow_books(user_id):
         return redirect(url_for('borrow_books'))
 
     else:
-        # Search and fetch available books
+        # GET method: Display available books for borrowing
         conn = None
         cursor = None
         books = []
         try:
             conn = get_db_connection()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+            # Search books by title, author, or book ID
             query = '''
                 SELECT b.id, b.title, b.author, b.image,
                        COUNT(i.id) AS total_copies,
@@ -1160,8 +1258,9 @@ def borrow_books(user_id):
             '''
             cursor.execute(query, (f'%{search_query}%', f'%{search_query}%', search_query))
             books = cursor.fetchall()
+
         except pymysql.MySQLError as e:
-            logger.error(f"An error occurred while fetching available books: {e}")
+            logger.error(f"Error fetching books: {e}")
         finally:
             if cursor:
                 cursor.close()
@@ -1173,17 +1272,11 @@ def borrow_books(user_id):
 
 
 
-
-
-
-
-
-# View borrowed books route
 @app.route('/view_borrowed_books', methods=['GET'])
 @token_required
 def view_borrowed_books(user_id):
-    user_id = session.get('user_id')
-    role = session.get('role')
+    role = session.get('role')  # Stored as 'ADMIN' or 'USER'
+    search_query = request.args.get('search', '')
 
     conn = None
     cursor = None
@@ -1193,50 +1286,66 @@ def view_borrowed_books(user_id):
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-        if role == 'admin':
-            # Admin can see all borrowed books and the users who borrowed them
-            cursor.execute('''
-                SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.username
-                FROM borrowed_books bb
-                JOIN books b ON bb.book_id = b.id
-                JOIN users u ON bb.user_id = u.id
-            ''')
+        if search_query:
+            if role == 'ADMIN':
+                # Admin searches by user ID
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.username
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    JOIN users u ON bb.user_id = u.id
+                    WHERE u.id = %s
+                ''', (search_query,))
+            else:
+                # User searches by book ID, title, or author
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    WHERE bb.user_id = %s AND (b.title LIKE %s OR b.author LIKE %s OR b.id = %s)
+                ''', (user_id, f'%{search_query}%', f'%{search_query}%', search_query))
         else:
-            # Regular user can only see their own borrowed books
-            cursor.execute('''
-                SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
-                FROM borrowed_books bb
-                JOIN books b ON bb.book_id = b.id
-                WHERE bb.user_id = %s
-            ''', (user_id,))
+            # No search query
+            if role == 'ADMIN':
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.username
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    JOIN users u ON bb.user_id = u.id
+                ''')
+            else:
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    WHERE bb.user_id = %s
+                ''', (user_id,))
 
         borrowed_books = cursor.fetchall()
-        logger.info(f"Borrowed books fetched for user_id {user_id}: {borrowed_books}")
 
     except pymysql.MySQLError as e:
-        logger.error(f"An error occurred while fetching borrowed books: {e}")
+        logger.error(f"Database error: {e}")
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if cursor: cursor.close()
+        if conn: conn.close()
 
-    return render_template('view_borrowed_books.html', borrowed_books=borrowed_books, role=role)
+    return render_template('view_borrowed_books.html', borrowed_books=borrowed_books, role=role, search_query=search_query)
 
 
 
-# Route for returning borrowed books
+
+
 @app.route('/return_books', methods=['GET', 'POST'])
 @token_required
 def return_books(user_id):
-    role = session.get('role')  # Retrieve role from the session
+    role = session.get('role', '').upper()  # Ensure role is in uppercase
 
     conn = None
     cursor = None
 
     if request.method == 'POST':
-        book_ids = request.form.getlist('book_ids')  # Get list of selected book IDs
-        user_ids = request.form.getlist('user_ids') if role == 'admin' else [user_id] * len(book_ids)
+        book_ids = request.form.getlist('book_ids')
+        user_ids = request.form.getlist('user_ids') if role == 'ADMIN' else [user_id] * len(book_ids)
 
         if not book_ids or not all(id.isdigit() for id in book_ids):
             flash('Invalid book ID(s).', 'error')
@@ -1248,43 +1357,39 @@ def return_books(user_id):
 
             for i, book_id in enumerate(book_ids):
                 book_id = int(book_id)
-                target_user_id = user_ids[i]  # Use corresponding user ID
+                target_user_id = user_ids[i]
 
-                # Check if the book is borrowed by the target user
                 cursor.execute('''
-                SELECT * FROM borrowed_books
-                WHERE book_id = %s AND user_id = %s
-            ''', (book_id, target_user_id))
+                    SELECT * FROM borrowed_books
+                    WHERE book_id = %s AND user_id = %s
+                ''', (book_id, target_user_id))
                 borrowed_book = cursor.fetchone()
 
                 if not borrowed_book:
                     flash(f'Book {book_id} not found or not borrowed by user {target_user_id}.', 'error')
-                continue  # Skip this book if not found
+                    continue
 
-            # Proceed to return the book by deleting the borrowed entry
-            cursor.execute('''
-                DELETE FROM borrowed_books
-                WHERE book_id = %s AND user_id = %s
-            ''', (book_id, target_user_id))
+                cursor.execute('''
+                    DELETE FROM borrowed_books
+                    WHERE book_id = %s AND user_id = %s
+                ''', (book_id, target_user_id))
 
-            # Update the inventory to set the book's status as available
-            cursor.execute('''
-                UPDATE inventory
-                SET status = 'available'
-                WHERE book_id = %s
-                LIMIT 1
-            ''', (book_id,))
+                cursor.execute('''
+                    UPDATE inventory
+                    SET status = 'available'
+                    WHERE book_id = %s
+                    LIMIT 1
+                ''', (book_id,))
 
-            # Update available_copies in the books table
-            cursor.execute('''
-                UPDATE books
-                SET available_copies = available_copies + 1
-                WHERE id = %s
-                LIMIT 1
-            ''', (book_id,))
+                cursor.execute('''
+                    UPDATE books
+                    SET available_copies = available_copies + 1
+                    WHERE id = %s
+                    LIMIT 1
+                ''', (book_id,))
 
             conn.commit()
-            flash(f'Successfully returned selected books.', 'success')
+            flash('Successfully returned selected books.', 'success')
 
         except pymysql.MySQLError as e:
             if conn:
@@ -1294,37 +1399,64 @@ def return_books(user_id):
         finally:
             if cursor:
                 cursor.close()
-        if conn:
-            conn.close()
+            if conn:
+                conn.close()
 
         return redirect(url_for('return_books'))
 
+    # GET Request: Show borrowed books with optional search
+    search_query = request.args.get('search', '').strip()
+    borrowed_books = []
 
-    # GET method handling: Display list of borrowed books
     try:
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-        if role == 'admin':
-            # Admin should see all borrowed books by all users
-            cursor.execute('''
-                SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.id AS user_id, u.username
-                FROM borrowed_books bb
-                JOIN books b ON bb.book_id = b.id
-                JOIN users u ON bb.user_id = u.id
-            ''')
-        else:
-            # Regular user should see only their own borrowed books
-            cursor.execute('''
-                SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
-                FROM borrowed_books bb
-                JOIN books b ON bb.book_id = b.id
-                WHERE bb.user_id = %s
-            ''', (user_id,))
+        if role == 'ADMIN':
+            if search_query.isdigit():
+                # Admin enters a valid user ID
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.id AS user_id, u.username
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    JOIN users u ON bb.user_id = u.id
+                    WHERE u.id = %s
+                ''', (search_query,))
+                borrowed_books = cursor.fetchall()
+                if not borrowed_books:
+                    flash(f"No borrowed books found for user ID {search_query}.", 'error')
 
-        borrowed_books = cursor.fetchall()
+            else:
+                # Admin sees all books and which user borrowed them
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date, u.id AS user_id, u.username
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    JOIN users u ON bb.user_id = u.id
+                ''')
+                borrowed_books = cursor.fetchall()
+
+        else:  # Regular users
+            if search_query:
+                # Regular user searches by title or author
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    WHERE bb.user_id = %s AND (b.title LIKE %s OR b.author LIKE %s)
+                ''', (user_id, f'%{search_query}%', f'%{search_query}%'))
+                borrowed_books = cursor.fetchall()
+            else:
+                # Regular user sees only their own borrowed books
+                cursor.execute('''
+                    SELECT b.id AS book_id, b.title, b.author, bb.borrowed_date, bb.due_date
+                    FROM borrowed_books bb
+                    JOIN books b ON bb.book_id = b.id
+                    WHERE bb.user_id = %s
+                ''', (user_id,))
+                borrowed_books = cursor.fetchall()
+
     except pymysql.MySQLError as e:
-        borrowed_books = []
         flash(f'Error occurred while fetching borrowed books: {e}', 'error')
     finally:
         if cursor:
@@ -1333,9 +1465,6 @@ def return_books(user_id):
             conn.close()
 
     return render_template('return_books.html', borrowed_books=borrowed_books, role=role)
-
-
-
 
 
 
