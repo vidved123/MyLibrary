@@ -7,16 +7,54 @@
     <title>Borrow Books</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        function borrowBooks() {
-            var isAdmin = "{{ 'true' if session.get('role') == 'admin' else 'false' }}";
-            var userId = isAdmin === 'true' ? prompt('Enter the user ID for whom these books are being borrowed:') : '{{ session.get("user_id") }}';
+        // AJAX function to verify if the entered user ID is valid
+        function verifyUserId() {
+            var userId = document.getElementById('admin-user-id').value.trim();
 
-            if (isAdmin === 'true' && (!userId || userId.trim() === '')) {
-                alert('User ID is required for admins.');
+            if (!userId) {
+                alert('Please enter a user ID to verify.');
                 return;
             }
 
-            // Collect all selected book IDs
+            $.ajax({
+                url: '/verify_user',  // Endpoint for verifying user ID
+                type: 'POST',
+                data: {
+                    user_id: userId
+                },
+                success: function(response) {
+                    if (response.exists) {
+                        alert('User ID is valid. You can now borrow books for this user.');
+                        document.getElementById('borrow-btn').disabled = false; // Enable the borrow button
+                        document.getElementById('admin-user-id').disabled = true; // Disable the user ID input after verification
+                        document.getElementById('verify-btn').disabled = true; // Disable the verify button after success
+                    } else {
+                        alert('User ID not found. Please enter a valid user ID.');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while verifying the user ID.');
+                }
+            });
+        }
+
+        // Borrow books function
+        function borrowBooks() {
+            var isAdmin = "{{ 'true' if session.get('role') == 'ADMIN' else 'false' }}";
+            var userId;
+
+            if (isAdmin === 'true') {
+                // Ensure user ID is entered for the admin
+                userId = document.getElementById('admin-user-id').value.trim();
+                if (!userId) {
+                    alert('Please enter a user ID to borrow books for.');
+                    return;
+                }
+            } else {
+                userId = '{{ session.get("user_id") }}';
+            }
+
+            // Collect selected book IDs
             var selectedBookIds = [];
             document.querySelectorAll('input[name="book_ids"]:checked').forEach(function (checkbox) {
                 selectedBookIds.push(checkbox.value);
@@ -27,21 +65,24 @@
                 return;
             }
 
-            // Create the form dynamically
+            if (selectedBookIds.length > 3) {
+                alert('You can only borrow up to 3 books at a time.');
+                return;
+            }
+
+            // Create and submit the form
             var form = document.createElement('form');
             form.method = 'POST';
             form.action = '/borrow';
 
-            // Add selected book IDs to the form
             selectedBookIds.forEach(function (bookId) {
-                var bookIdInput = document.createElement('input');
-                bookIdInput.type = 'hidden';
-                bookIdInput.name = 'book_ids[]'; // Pass as array
-                bookIdInput.value = bookId;
-                form.appendChild(bookIdInput);
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'book_ids[]';
+                input.value = bookId;
+                form.appendChild(input);
             });
 
-            // Add user ID to the form
             var userIdInput = document.createElement('input');
             userIdInput.type = 'hidden';
             userIdInput.name = 'user_id';
@@ -53,7 +94,29 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+            // Check if the user is an admin based on the session role
+            var isAdmin = "{{ 'true' if session.get('role') == 'ADMIN' else 'false' }}";
+            console.log(isAdmin);  // Debugging: Log to verify if the role is correct
+
+            // Show admin user ID section if the user is an admin
+            if (isAdmin === 'true') {
+                document.getElementById('admin-user-id-section').style.display = 'block';
+            }
+
+            // Attach borrow button handler
             document.getElementById('borrow-btn').addEventListener('click', borrowBooks);
+
+            // Limit to 3 checkboxes
+            const checkboxes = document.querySelectorAll('input[name="book_ids"]');
+            checkboxes.forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    const selected = document.querySelectorAll('input[name="book_ids"]:checked');
+                    if (selected.length > 3) {
+                        this.checked = false;
+                        alert('You can only select up to 3 books.');
+                    }
+                });
+            });
         });
     </script>
     <style>
@@ -245,6 +308,13 @@
     <div class="container">
         <h1>Borrow a Book</h1>
 
+        <!-- Admin User ID Input -->
+        <div id="admin-user-id-section" style="display: none; margin-bottom: 20px;">
+            <label for="admin-user-id">Enter User ID (Admin only):</label>
+            <input type="text" id="admin-user-id" placeholder="Enter the user ID" />
+            <button type="button" id="verify-btn" onclick="verifyUserId()">Verify User ID</button>
+        </div>
+
         <form method="GET" action="{{ url_for('borrow_books') }}" class="search-form">
             <input type="text" name="search" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
             <button type="submit">Search</button>
@@ -277,7 +347,7 @@
             </tbody>
         </table>
 
-        <button id="borrow-btn">Borrow Selected Books</button>
+        <button id="borrow-btn" disabled>Borrow Selected Books</button>
 
         <a href="{{ url_for('library') }}" class="back-link">Back to Library</a>
 
@@ -294,5 +364,4 @@
         {% endwith %}
     </div>
 </body>
-
 </html>
