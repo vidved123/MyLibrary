@@ -1,3 +1,4 @@
+
 import mysql
 
 print("mysql module:", mysql)
@@ -48,7 +49,7 @@ app.permanent_session_lifetime = timedelta(hours=2)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,     # Prevents JavaScript access – secure
     SESSION_COOKIE_SAMESITE='Lax',    # Cookie works with navigation
-    SESSION_COOKIE_SECURE=False,      # Correct for HTTP (localhost); use True only with HTTPS
+    SESSION_COOKIE_SECURE=False,      # Correct for HTTP (127.0.0.1); use True only with HTTPS
 )
 
 # Keys and paths
@@ -59,14 +60,15 @@ app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'images')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
 # MySQL config
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = '127.0.0.1:' 
+''
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'foulae0101@'
 app.config['MYSQL_DB'] = 'library'
 
 # Redis setup
 redis_store = redis.StrictRedis(
-    host='localhost',
+    host='127.0.0.1',
     port=6379,
     db=0,
     decode_responses=True
@@ -109,7 +111,7 @@ Limiter = Limiter(
 
 def get_db_connection():
     return pymysql.connect(
-        host='localhost',
+        host='127.0.0.1',
         user='root',
         password='foulae0101@',
         db='library',
@@ -188,40 +190,47 @@ def init_db():
         conn.close()
 
 
+
+# Load session from JWT
 @app.before_request
 def load_user_from_token():
+    # Allow unauthenticated access to login, signup, and static files
+    if request.endpoint in ['login', 'static'] or request.path.startswith('/static/'):
+        return
+
     token = request.cookies.get('token')
     if token:
         try:
             payload = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+
+            session_id = payload.get('session_id')
+            expected_hash = redis_store.get(session_id)
+            if not expected_hash or expected_hash != sha256(token.encode()).hexdigest():
+                logger.warning("[JWT LOAD] Session hash mismatch.")
+                flash("Invalid session. Please log in again.", "error")
+                session.clear()
+                return redirect(url_for('login'))
+
             session['user_id'] = payload.get('user_id')
             session['role'] = payload.get('role', '').upper()
-            session['session_id'] = payload.get('session_id')
+            session['session_id'] = session_id
 
-            logger.debug(f"[JWT LOAD] Loaded session from token: {dict(session)}")
-        except jwt.ExpiredSignatureError:
-            logger.warning("[JWT LOAD] Token expired.")
-            session.clear()
-            flash("Session expired. Please log in again.", "error")
-            return redirect(url_for('login'))
-        except jwt.InvalidTokenError as e:
+            logger.debug(f"[JWT LOAD] Loaded session for user {session['user_id']}")
+
+        except jwt.exceptions.InvalidTokenError as e:
             logger.warning(f"[JWT LOAD] Invalid token: {e}")
             session.clear()
-            flash("Invalid session. Please log in again.", "error")
             return redirect(url_for('login'))
     else:
-        logger.debug("[JWT LOAD] No token found in request.")
+        # Only redirect if not already going to login
+        return redirect(url_for('login'))
 
-        # home route
+# Home route
 @app.route('/')
 def home():
-    token = request.cookies.get('token')
-    if token:
-        return render_template('home.html', logged_in=True)
-    else:
-        return render_template('home.html', logged_in=False)
+    return render_template('home.html', logged_in='user_id' in session)
 
-
+# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -242,8 +251,8 @@ def login():
             return render_template('login.html')
 
         user_id = user['id']
-        role = user['role']
         hashed_password = user['password']
+        role = user['role']
 
         if not hashed_password.startswith('$2b$'):
             flash('Invalid password format in database.', 'error')
@@ -253,35 +262,43 @@ def login():
             flash('Invalid username or password.', 'error')
             return render_template('login.html')
 
+        # Create token and session
         session_id = str(uuid.uuid4())
         payload = {
             'user_id': user_id,
-            'role': role,  # ✅ Include role
+            'role': role,
             'session_id': session_id,
             'exp': datetime.now(timezone.utc) + timedelta(hours=2)
         }
-        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
-        # ✅ Logging
-        logger.info(f"[LOGIN] Token generated for user {user_id} (role: {role}): {token}")
-        print(f"[DEBUG] Token: {token}")
-        print(f"[DEBUG] Payload: {payload}")
+        secret = app.config['JWT_SECRET_KEY']
+        token = jwt.encode(payload, secret, algorithm='HS256')
+        token_hash = sha256(token.encode()).hexdigest()
 
-        redis_store[session_id] = sha256(token.encode()).hexdigest()
+        redis_store[session_id] = token_hash
 
         response = make_response(redirect(url_for('dashboard')))
-        response.set_cookie('token', token, httponly=True, max_age=7200, samesite='Lax')
+        max_age = int(timedelta(hours=2).total_seconds())
+        response.set_cookie('token', token, httponly=True, max_age=max_age, samesite='Lax')
+
+        session['session_id'] = session_id
+
+        logger.info(f"[LOGIN] User {user_id} logged in as {role}")
+        print(f"[DEBUG] JWT Token: {token}")
+        print(f"[DEBUG] Session ID: {session_id}")
 
         return response
 
     except Exception as e:
-        logger.error(f"[LOGIN] Internal server error: {e}", exc_info=True)
+        logger.error(f"[LOGIN] Error: {e}", exc_info=True)
         flash('Internal server error.', 'error')
         return render_template('login.html')
 
     finally:
         cursor.close()
         conn.close()
+
+
 
 
 
@@ -485,7 +502,6 @@ def add_user():
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         role = payload.get('role', '')
 
-        # ✅ Logging the role from token
         logger.info(f"[ADD_USER] Access attempt with role: {role}")
         print(f"[DEBUG] Decoded token payload: {payload}")
 
@@ -509,7 +525,8 @@ def add_user():
         country_code = request.form['country_code']
         user_role = request.form['role']
 
-        hashed_password = generate_password_hash(password, method='bcrypt')
+        # ✅ Proper bcrypt hashing
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -694,15 +711,32 @@ def delete_profile(user_id):
 @app.route('/logout', methods=['POST'])
 @token_required
 def logout(user_id):
-    session_id = session.get('session_id')
-    if session_id:
-        redis_store.delete(session_id)
+    # Attempt to get session_id from JWT token stored in cookie
+    token = request.cookies.get('token')
+    session_id = None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        session_id = payload.get('session_id')
+    except Exception as e:
+        logger.warning(f"[LOGOUT] Invalid token on logout: {e}", exc_info=True)
+
+    # Delete session from redis_store
+    if session_id and session_id in redis_store:
+        del redis_store[session_id]
+
+    # Clear Flask session (optional)
     session.clear()
 
+    # Prepare response with cookies deleted
     response = make_response(jsonify({'message': 'Logged out successfully'}))
     response.delete_cookie('token')
-    response.delete_cookie('universal_token')
+    response.delete_cookie('universal_token')  # If used elsewhere
+
+    logger.info(f"[LOGOUT] User {user_id} logged out. Session ID: {session_id}")
+
     return response
+
 
 
 
@@ -856,75 +890,84 @@ def add_books():
             conn = get_db_connection()
             cursor = conn.cursor()
 
+            # Fetch existing normalized_keys from the books table
+            cursor.execute("SELECT normalized_key FROM books")
+            existing_books = {row[0] for row in cursor.fetchall()}
+
             # Handle Excel file upload
             if 'excel_file' in request.files and request.files['excel_file'].filename != '':
                 excel_file = request.files['excel_file']
                 df = pd.read_excel(excel_file, engine='openpyxl')
 
-                required_columns = ['title', 'author', 'image', 'total_copies']
+                required_columns = ['title', 'author', 'total_copies']
                 if not all(col in df.columns for col in required_columns):
-                    flash('Excel file must contain title, author, image, and total_copies columns.', 'error')
+                    flash('Excel file must contain at least title, author, and total_copies columns.', 'error')
                     return redirect(url_for('add_books'))
 
                 for _, row in df.iterrows():
-                    title = row['title']
-                    author = row['author']
-                    image = row['image']
+                    title = str(row['title']).strip()
+                    author = str(row['author']).strip()
                     total_copies = row['total_copies']
 
                     if not isinstance(total_copies, int) or total_copies < 1:
                         flash(f"Invalid total copies for '{title}'", 'error')
                         continue
 
-                    cursor.execute('SELECT id FROM books WHERE title = %s AND author = %s', (title, author))
-                    existing_book = cursor.fetchone()
+                    image = str(row['image']).strip() if 'image' in row and pd.notna(row['image']) else generate_image_filename(title)
+                    normalized_key = f"{title.lower()}|{author.lower()}"
 
-                    if existing_book is None:
-                        cursor.execute('''
-                            INSERT INTO books (title, author, image, total_copies, available_copies)
-                            VALUES (%s, %s, %s, %s, %s)
-                        ''', (title, author, image, total_copies, total_copies))
-
-                        book_id = cursor.lastrowid
-
-                        for _ in range(total_copies):
-                            cursor.execute('INSERT INTO inventory (book_id, status) VALUES (%s, %s)', (book_id, 'available'))
-
-                        flash(f"Book '{title}' by '{author}' added successfully.", 'success')
-                    else:
+                    if normalized_key in existing_books:
                         flash(f"Book '{title}' by '{author}' already exists. Skipping.", 'info')
+                        continue
 
-                conn.commit()
-                notify_clients_new_books()
-
-            # Handle manual book addition
-            elif all(field in request.form for field in ('title', 'author', 'total_copies')):
-                title = request.form['title']
-                author = request.form['author']
-                total_copies = int(request.form['total_copies'])
-                image_file = request.files.get('image')
-
-                image_filename = image_file.filename if image_file and image_file.filename else 'default.jpg'
-
-                cursor.execute('SELECT id FROM books WHERE title = %s AND author = %s', (title, author))
-                existing_book = cursor.fetchone()
-
-                if existing_book is None:
                     cursor.execute('''
-                        INSERT INTO books (title, author, image, total_copies, available_copies)
-                        VALUES (%s, %s, %s, %s, %s)
-                    ''', (title, author, image_filename, total_copies, total_copies))
+                        INSERT INTO books (title, author, image, total_copies, available_copies, normalized_key)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    ''', (title, author, image, total_copies, total_copies, normalized_key))
 
                     book_id = cursor.lastrowid
 
                     for _ in range(total_copies):
                         cursor.execute('INSERT INTO inventory (book_id, status) VALUES (%s, %s)', (book_id, 'available'))
 
+                    existing_books.add(normalized_key)
                     flash(f"Book '{title}' by '{author}' added successfully.", 'success')
-                    conn.commit()
-                    notify_clients_new_books()
-                else:
+
+                conn.commit()
+                notify_clients_new_books()
+
+            # Handle manual book addition
+            elif all(field in request.form for field in ('title', 'author', 'total_copies')):
+                title = request.form['title'].strip()
+                author = request.form['author'].strip()
+                total_copies = int(request.form['total_copies'])
+                image_file = request.files.get('image')
+
+                normalized_key = f"{title.lower()}|{author.lower()}"
+
+                if normalized_key in existing_books:
                     flash(f"Book '{title}' by '{author}' already exists. Skipping.", 'info')
+                    return redirect(url_for('library'))
+
+                image_filename = 'default.jpg'
+                if image_file and image_file.filename:
+                    image_filename = generate_image_filename(title)
+                    image_path = os.path.join(app.static_folder, 'images', image_filename)
+                    image_file.save(image_path)
+
+                cursor.execute('''
+                    INSERT INTO books (title, author, image, total_copies, available_copies, normalized_key)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (title, author, image_filename, total_copies, total_copies, normalized_key))
+
+                book_id = cursor.lastrowid
+
+                for _ in range(total_copies):
+                    cursor.execute('INSERT INTO inventory (book_id, status) VALUES (%s, %s)', (book_id, 'available'))
+
+                conn.commit()
+                notify_clients_new_books()
+                flash(f"Book '{title}' by '{author}' added successfully.", 'success')
 
             else:
                 flash('Invalid submission. Please fill all required fields.', 'error')
@@ -943,6 +986,10 @@ def add_books():
         return redirect(url_for('library'))
 
     return render_template('add_books.html')
+
+
+
+
 
 
 
@@ -968,13 +1015,11 @@ def handle_disconnect():
     print('Client disconnected')
 
 def generate_image_filename(title):
-    # Normalize and clean up title
     title = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii')
     title = title.strip().lower()
     title = re.sub(r'[^a-z0-9\s]', '', title)
     filename = re.sub(r'\s+', '_', title)
 
-    # Special series logic
     diary_keywords = [
         "rodrick_rules", "the_last_straw", "dog_days", "the_ugly_truth",
         "cabin_fever", "the_third_wheel", "hard_luck", "the_long_haul",
@@ -995,30 +1040,28 @@ def generate_image_filename(title):
         return f"the_secret_seven_{filename}.jpg"
 
     if re.match(r"[a-z]_is_for_", filename):
-        return filename + ".jpg"  # Sue Grafton style
+        return filename + ".jpg"
 
-    return filename + ".jpg"  # Default fallback
+    return filename + ".jpg"
 
 @app.route('/view_books', methods=['GET'])
 @token_required
 def view_books(user_id):
     search_query = request.args.get('search', '')
 
-    # Fetch books from the database based on the search query
     def get_books_from_your_db(search_query):
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         try:
             if search_query:
                 cursor.execute(
-                    "SELECT id, title, author FROM books WHERE title LIKE %s OR author LIKE %s",
+                    "SELECT id AS book_id, title, author, total_copies, available_copies FROM books WHERE title LIKE %s OR author LIKE %s ORDER BY title ASC",
                     (f"%{search_query}%", f"%{search_query}%")
                 )
             else:
                 cursor.execute(
-    "SELECT id AS book_id, title, author, total_copies, available_copies FROM books WHERE title LIKE %s OR author LIKE %s",
-    (f"%{search_query}%", f"%{search_query}%")
-)
+                    "SELECT id AS book_id, title, author, total_copies, available_copies FROM books ORDER BY title ASC"
+                )
             books = cursor.fetchall()
         finally:
             cursor.close()
@@ -1034,6 +1077,8 @@ def view_books(user_id):
     is_admin = (role == 'ADMIN')
 
     return render_template('view_books.html', books=books, search_query=search_query, is_admin=is_admin)
+
+
 
 
 
