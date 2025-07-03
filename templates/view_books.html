@@ -59,7 +59,6 @@
                     {% if is_admin %}
                     <th>Select</th>
                     {% endif %}
-                    <th>ID</th>
                     <th>Title</th>
                     <th>Author</th>
                     <th>Image</th>
@@ -71,15 +70,14 @@
                     {% if is_admin %}
                     <td><input type="checkbox" name="book_ids" value="{{ book.book_id }}"></td>
                     {% endif %}
-                    <td>{{ book.book_id }}</td>
                     <td>{{ book.title }}</td>
                     <td>{{ book.author }}</td>
                     <td>
-    <img src="{{ url_for('static', filename='images/' + book.image_path) }}"
-         alt="{{ book.title }}"
-         onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default.jpg') }}';"
-         style="width: 100px; height: auto;">
-</td>
+                        <img src="{{ url_for('static', filename='images/' + book.image_path) }}"
+                             alt="{{ book.title }}"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default.jpg') }}';"
+                             style="width: 100px; height: auto;">
+                    </td>
                     <td>{{ book.total_copies }}</td>
                     <td>{{ book.available_copies }}</td>
                 </tr>
