@@ -6,43 +6,6 @@
     <title>View Books</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ViewBooks.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        function deleteBooks() {
-            var selectedBookIds = [];
-            document.querySelectorAll('input[name="book_ids"]:checked').forEach(function (checkbox) {
-                selectedBookIds.push(checkbox.value);
-            });
-
-            if (selectedBookIds.length === 0) {
-                alert('Please select at least one book to delete.');
-                return;
-            }
-
-            if (confirm('Are you sure you want to delete the selected books?')) {
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/delete_books';
-
-                selectedBookIds.forEach(function (bookId) {
-                    var bookIdInput = document.createElement('input');
-                    bookIdInput.type = 'hidden';
-                    bookIdInput.name = 'book_ids[]';
-                    bookIdInput.value = bookId;
-                    form.appendChild(bookIdInput);
-                });
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var deleteButton = document.getElementById('delete-btn');
-            if (deleteButton) {
-                deleteButton.addEventListener('click', deleteBooks);
-            }
-        });
-    </script>
 </head>
 <body>
     <div class="container">
@@ -91,6 +54,16 @@
         </form>
     </div>
 
+    <!-- Deletion Modal -->
+    <div id="delete-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <p>How would you like to delete the selected books?</p>
+            <button onclick="submitDelete(false)">Delete One Copy</button>
+            <button onclick="submitDelete(true)">Delete All Copies</button>
+            <button onclick="closeDeleteModal()">Cancel</button>
+        </div>
+    </div>
+
     <div class="flash-messages">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -100,5 +73,57 @@
             {% endif %}
         {% endwith %}
     </div>
+
+    <script>
+        let selectedBookIds = [];
+
+        function deleteBooks() {
+            selectedBookIds = [];
+            document.querySelectorAll('input[name="book_ids"]:checked').forEach(cb => {
+                selectedBookIds.push(cb.value);
+            });
+
+            if (selectedBookIds.length === 0) {
+                alert('Please select at least one book to delete.');
+                return;
+            }
+
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+        }
+
+        function submitDelete(deleteAll) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/delete_books';
+
+            selectedBookIds.forEach(bookId => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'book_ids';
+                input.value = bookId;
+                form.appendChild(input);
+            });
+
+            const modeInput = document.createElement('input');
+            modeInput.type = 'hidden';
+            modeInput.name = 'delete_all';
+            modeInput.value = deleteAll ? '1' : '0';
+            form.appendChild(modeInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const deleteButton = document.getElementById('delete-btn');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', deleteBooks);
+            }
+        });
+    </script>
 </body>
 </html>
