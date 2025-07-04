@@ -1,3 +1,4 @@
+import traceback
 
 import mysql
 
@@ -25,12 +26,12 @@ import mysql.connector
 import pandas as pd
 import pymysql
 import redis
-from flask import (Flask, abort, config, flash, jsonify, make_response,
-                   redirect, render_template, request, session, url_for)
+from flask import (Flask, abort, config, current_app, flash, jsonify,
+                   make_response, redirect, render_template, request, session,
+                   url_for)
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
@@ -39,10 +40,10 @@ print("[DEBUG] Python executing path:", sys.executable)
 
 os.environ['FLASK_ENV'] = 'development' 
 
-
-
 # Flask app
 app = Flask(__name__)
+
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
 
 # Session management
 app.permanent_session_lifetime = timedelta(hours=2)
@@ -866,126 +867,96 @@ def book_master(user_id):
     return render_template('book_master.html', books=books)
 
 
-socketio = SocketIO(app)
 
 
-# Notify clients when new books are added
-def notify_clients_new_books():
-    socketio.emit('new_books', {'message': 'New books have been added!'})
-
-
-# Route for adding books, with support for Excel file upload
 @app.route('/add_books', methods=['GET', 'POST'])
 def add_books():
-    role = session.get('role')
-    if role is None or role.lower() != 'admin':
-        flash('You do not have permission to add books.', 'error')
-        return redirect(url_for('library'))
-
     conn = None
     cursor = None
+    try:
+        user_id = session.get('user_id')
+        logger.debug("[JWT LOAD] Loaded session for user %s", user_id)
 
-    if request.method == 'POST':
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-            # Fetch existing normalized_keys from the books table
-            cursor.execute("SELECT normalized_key FROM books")
-            existing_books = {row[0] for row in cursor.fetchall()}
+        # Fetch existing normalized keys
+        cursor.execute("SELECT normalized_key FROM books")
+        existing_books = {row['normalized_key'] for row in cursor.fetchall()}
+        logger.debug("Existing normalized keys: %s", existing_books)
 
-            # Handle Excel file upload
-            if 'excel_file' in request.files and request.files['excel_file'].filename != '':
+        # Handle Excel file upload
+        if request.method == 'POST' and 'submit_excel' in request.form:
+            if 'excel_file' in request.files and request.files['excel_file'].filename:
                 excel_file = request.files['excel_file']
-                df = pd.read_excel(excel_file, engine='openpyxl')
-
-                required_columns = ['title', 'author', 'total_copies']
-                if not all(col in df.columns for col in required_columns):
-                    flash('Excel file must contain at least title, author, and total_copies columns.', 'error')
-                    return redirect(url_for('add_books'))
+                df = pd.read_excel(excel_file)
+                logger.debug("Excel preview:\n%s", df.head())
 
                 for _, row in df.iterrows():
                     title = str(row['title']).strip()
                     author = str(row['author']).strip()
-                    total_copies = row['total_copies']
+                    total_copies = int(row['total_copies'])
 
-                    if not isinstance(total_copies, int) or total_copies < 1:
-                        flash(f"Invalid total copies for '{title}'", 'error')
-                        continue
-
-                    image = str(row['image']).strip() if 'image' in row and pd.notna(row['image']) else generate_image_filename(title)
                     normalized_key = f"{title.lower()}|{author.lower()}"
 
                     if normalized_key in existing_books:
-                        flash(f"Book '{title}' by '{author}' already exists. Skipping.", 'info')
+                        logger.info("Skipping existing book: %s", normalized_key)
                         continue
 
                     cursor.execute('''
                         INSERT INTO books (title, author, image, total_copies, available_copies, normalized_key)
                         VALUES (%s, %s, %s, %s, %s, %s)
-                    ''', (title, author, image, total_copies, total_copies, normalized_key))
-
-                    book_id = cursor.lastrowid
-
-                    for _ in range(total_copies):
-                        cursor.execute('INSERT INTO inventory (book_id, status) VALUES (%s, %s)', (book_id, 'available'))
+                    ''', (title, author, None, total_copies, total_copies, normalized_key))
 
                     existing_books.add(normalized_key)
-                    flash(f"Book '{title}' by '{author}' added successfully.", 'success')
 
                 conn.commit()
-                notify_clients_new_books()
-
-            # Handle manual book addition
-            elif all(field in request.form for field in ('title', 'author', 'total_copies')):
-                title = request.form['title'].strip()
-                author = request.form['author'].strip()
-                total_copies = int(request.form['total_copies'])
-                image_file = request.files.get('image')
-
-                normalized_key = f"{title.lower()}|{author.lower()}"
-
-                if normalized_key in existing_books:
-                    flash(f"Book '{title}' by '{author}' already exists. Skipping.", 'info')
-                    return redirect(url_for('library'))
-
-                image_filename = 'default.jpg'
-                if image_file and image_file.filename:
-                    image_filename = generate_image_filename(title)
-                    image_path = os.path.join(app.static_folder, 'images', image_filename)
-                    image_file.save(image_path)
-
-                cursor.execute('''
-                    INSERT INTO books (title, author, image, total_copies, available_copies, normalized_key)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (title, author, image_filename, total_copies, total_copies, normalized_key))
-
-                book_id = cursor.lastrowid
-
-                for _ in range(total_copies):
-                    cursor.execute('INSERT INTO inventory (book_id, status) VALUES (%s, %s)', (book_id, 'available'))
-
-                conn.commit()
-                notify_clients_new_books()
-                flash(f"Book '{title}' by '{author}' added successfully.", 'success')
-
+                flash('Books uploaded successfully from Excel.', 'success')
+                return redirect(url_for('library'))
             else:
-                flash('Invalid submission. Please fill all required fields.', 'error')
+                flash('No Excel file provided.', 'error')
 
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            flash(f'Error: {str(e)}', 'error')
+        # Handle manual book addition
+        elif request.method == 'POST' and 'submit_manual' in request.form:
+            title = request.form['title'].strip()
+            author = request.form['author'].strip()
+            total_copies = int(request.form['total_copies'])
+            image = request.files.get('image')
 
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
+            normalized_key = f"{title.lower()}|{author.lower()}"
 
-        return redirect(url_for('library'))
+            if normalized_key in existing_books:
+                flash('Book already exists.', 'warning')
+                return redirect(url_for('add_books'))
 
-    return render_template('add_books.html')
+            image_filename = None
+            if image and image.filename:
+                filename = secure_filename(image.filename)
+                image_filename = os.path.join('uploads', filename)
+                image.save(os.path.join(current_app.static_folder, image_filename))
+                logger.debug("Image saved to: %s", image_filename)
+
+            cursor.execute('''
+                INSERT INTO books (title, author, image, total_copies, available_copies, normalized_key)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (title, author, image_filename, total_copies, total_copies, normalized_key))
+
+            conn.commit()
+            flash('Book added successfully.', 'success')
+            return redirect(url_for('library'))
+
+        return render_template('add_books.html')
+
+    except Exception as e:
+        logger.exception("Error occurred in /add_books")
+        flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('add_books'))
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 
@@ -993,33 +964,25 @@ def add_books():
 
 
 
-# WebSocket events
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
 
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
 
 
-# WebSocket events
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
 
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
+
+import re
+import unicodedata
+
 
 def generate_image_filename(title):
+    # Normalize and clean the title
     title = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii')
     title = title.strip().lower()
     title = re.sub(r'[^a-z0-9\s]', '', title)
     filename = re.sub(r'\s+', '_', title)
 
+    # Predefined patterns for common series
     diary_keywords = [
         "rodrick_rules", "the_last_straw", "dog_days", "the_ugly_truth",
         "cabin_fever", "the_third_wheel", "hard_luck", "the_long_haul",
@@ -1028,10 +991,10 @@ def generate_image_filename(title):
     ]
 
     if "diary_of_a_wimpy_kid" in filename:
-        return filename + ".jpg"
-    for keyword in diary_keywords:
-        if keyword in filename:
-            return f"diary_of_a_wimpy_kid_{keyword}.jpg"
+        for keyword in diary_keywords:
+            if keyword in filename:
+                return f"diary_of_a_wimpy_kid_{keyword}.jpg"
+        return f"{filename}.jpg"
 
     if filename.startswith("five"):
         return f"the_famous_five_{filename}.jpg"
@@ -1040,9 +1003,11 @@ def generate_image_filename(title):
         return f"the_secret_seven_{filename}.jpg"
 
     if re.match(r"[a-z]_is_for_", filename):
-        return filename + ".jpg"
+        return f"{filename}.jpg"
 
-    return filename + ".jpg"
+    # Default fallback
+    return f"{filename}.jpg"
+
 
 @app.route('/view_books', methods=['GET'])
 @token_required
@@ -1087,75 +1052,71 @@ def view_books(user_id):
 
 
 
-# Deleting books route
 @app.route('/delete_books', methods=['POST'])
 @token_required
 def delete_books(user_id):
     role = session.get('role')
 
-    # Only admins are allowed to delete books
     if role != 'ADMIN':
         flash('You do not have permission to delete books.', 'error')
         return redirect(url_for('view_books'))
 
-    # Get selected book IDs from the form
-    book_ids = request.form.getlist('book_ids[]')
+    book_ids = request.form.getlist('book_ids')
+    delete_all = request.form.get('delete_all') == '1'
 
     if not book_ids:
         flash('No books selected for deletion.', 'error')
         return redirect(url_for('view_books'))
 
-    conn = None
-    cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         for book_id in book_ids:
             if not book_id.isdigit():
-                flash(f'Invalid book ID: {book_id}', 'error')
+                flash(f"Invalid book ID: {book_id}", "error")
                 continue
 
             book_id = int(book_id)
-
-            # Check the current available copies for the book
-            cursor.execute('SELECT available_copies, total_copies FROM books WHERE id = %s', (book_id,))
+            cursor.execute('SELECT total_copies, available_copies FROM books WHERE id = %s', (book_id,))
             book = cursor.fetchone()
 
-            if book:
-                available_copies = book['available_copies']
-                total_copies = book['total_copies']
+            if not book:
+                flash(f"Book ID {book_id} not found.", "error")
+                continue
 
-                # If there are available copies, decrement the count
-                if available_copies > 0:
-                    new_available_copies = available_copies - 1
-                    cursor.execute('UPDATE books SET available_copies = %s WHERE id = %s',
-                                   (new_available_copies, book_id))
+            total, available = book['total_copies'], book['available_copies']
 
-                    # Optional: If no copies remain, delete the book from inventory
-                    if new_available_copies == 0 and total_copies == 1:
-                        cursor.execute('DELETE FROM inventory WHERE book_id = %s', (book_id,))
-                        cursor.execute('DELETE FROM books WHERE id = %s', (book_id,))
-
-                    conn.commit()
-                else:
-                    flash(f'No available copies left for book ID: {book_id}', 'error')
+            if delete_all:
+                cursor.execute('DELETE FROM inventory WHERE book_id = %s', (book_id,))
+                cursor.execute('DELETE FROM books WHERE id = %s', (book_id,))
             else:
-                flash(f'Book ID {book_id} not found in the database.', 'error')
+                if total <= 1:
+                    cursor.execute('DELETE FROM inventory WHERE book_id = %s', (book_id,))
+                    cursor.execute('DELETE FROM books WHERE id = %s', (book_id,))
+                else:
+                    new_total = total - 1
+                    new_available = max(0, available - 1)
+                    cursor.execute('''
+                        UPDATE books
+                        SET total_copies = %s, available_copies = %s
+                        WHERE id = %s
+                    ''', (new_total, new_available, book_id))
 
-        flash('Selected books updated successfully.', 'success')
+        conn.commit()
+        flash("Books deleted/updated successfully.", "success")
 
-    except pymysql.MySQLError as e:
+    except Exception as e:
         if conn:
             conn.rollback()
-        flash(f'An error occurred: {e}', 'error')
+        flash(f"An error occurred: {e}", "danger")
+
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        cursor.close()
+        conn.close()
 
     return redirect(url_for('library'))
+
 
 
 
