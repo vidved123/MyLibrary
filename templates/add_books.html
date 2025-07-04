@@ -16,7 +16,7 @@
             <input type="text" name="author" placeholder="Author" required>
             <input type="number" name="total_copies" placeholder="Total Copies" required min="1">
             <input type="file" name="image" accept="image/*">
-            <button type="submit">Add Book</button>
+            <button type="submit" name="submit_manual">Add Book</button>
         </form>
 
         <hr>
@@ -25,7 +25,7 @@
         <form method="POST" action="{{ url_for('add_books') }}" enctype="multipart/form-data">
             <label for="excel_file">Upload Excel (.xlsx):</label>
             <input type="file" name="excel_file" accept=".xlsx" required>
-            <button type="submit">Upload Excel</button>
+            <button type="submit" name="submit_excel">Upload Excel</button>
         </form>
 
         <hr>
