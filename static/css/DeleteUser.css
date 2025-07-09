@@ -1,135 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f1f1f1;
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
     margin: 0;
     padding: 0;
+    min-height: 100vh;
+    animation: fadeInBody 1s ease;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .container {
     width: 90%;
     max-width: 900px;
-    margin: 50px auto;
-    background-color: #fff;
-    padding: 40px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+    margin: 56px auto;
+    background: rgba(255, 255, 255, 0.75);
+    padding: 48px 36px;
+    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    border-radius: 18px;
     text-align: center;
+    backdrop-filter: blur(8px);
+    animation: fadeInUp 1s 0.2s both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 h1 {
-    color: #333;
+    color: #4682b4;
     font-size: 2.2em;
-    margin-bottom: 20px;
+    margin-bottom: 28px;
     letter-spacing: 1px;
+    font-weight: 700;
+    text-shadow: 1px 2px 12px rgba(70, 130, 180, 0.10);
+    animation: fadeInDown 1s 0.3s both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .message {
     margin-bottom: 20px;
     padding: 15px;
-    border-radius: 6px;
+    border-radius: 7px;
     font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    animation: fadeIn 0.7s 0.7s both;
     transition: all 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .success {
     background-color: #d1e7dd;
     color: #0f5132;
-    border: 1px solid #badbcc;
+    border: 1.5px solid #badbcc;
 }
 
 .danger {
     background-color: #f8d7da;
     color: #842029;
-    border: 1px solid #f5c2c7;
+    border: 1.5px solid #f5c2c7;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin: 30px 0;
+    margin: 36px 0;
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(70, 130, 180, 0.07);
+    animation: fadeIn 1s 0.5s both;
 }
 
 th, td {
     padding: 18px 15px;
     text-align: left;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #e0eafc;
 }
 
 th {
-    background-color: #343a40;
+    background: linear-gradient(90deg, #4682b4 0%, #4CAF50 100%);
     color: white;
     text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 1.05em;
 }
 
 td {
     font-size: 16px;
     color: #555;
+    background: rgba(240, 248, 255, 0.6);
 }
 
-tr:nth-child(even) {
-    background-color: #f9f9f9;
+tr:nth-child(even) td {
+    background: #f9f9f9;
 }
 
-tr:hover {
-    background-color: #f1f3f5;
-    transition: background-color 0.3s ease;
+tr:hover td {
+    background: #e0eafc;
+    transition: background 0.3s;
 }
 
 .delete-button {
-    background-color: #dc3545;
+    background: linear-gradient(90deg, #dc3545 0%, #ff758c 100%);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 7px;
+    font-size: 1em;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 24px rgba(220, 53, 69, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    outline: none;
 }
 
 .delete-button:hover {
-    background-color: #c82333;
+    background: linear-gradient(90deg, #c82333 0%, #ff758c 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(220, 53, 69, 0.18);
 }
 
 .back-button {
-    margin-top: 30px;
+    margin-top: 36px;
 }
 
 .back-button a {
     text-decoration: none;
     color: white;
-    background-color: #007bff;
-    padding: 12px 25px;
-    border-radius: 5px;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
+    background: linear-gradient(90deg, #007bff 0%, #00c6ff 100%);
+    padding: 14px 28px;
+    border-radius: 7px;
+    font-size: 1.1em;
+    font-weight: 600;
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    display: inline-block;
 }
 
 .back-button a:hover {
-    background-color: #0056b3;
+    background: linear-gradient(90deg, #0056b3 0%, #00c6ff 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    background: #e0eafc;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4de;
+    border-radius: 8px;
 }
 
 @media (max-width: 768px) {
     .container {
         width: 95%;
-        padding: 25px;
+        padding: 25px 6px;
     }
 
     h1 {
-        font-size: 1.8em;
+        font-size: 1.5em;
     }
 
     table, th, td {
         font-size: 14px;
-        padding: 12px 10px;
+        padding: 10px 6px;
     }
 
     .delete-button {
         padding: 8px 15px;
-        font-size: 12px;
+        font-size: 0.95em;
     }
 
     .back-button a {
-        padding: 10px 20px;
-        font-size: 14px;
+        padding: 10px 12px;
+        font-size: 1em;
     }
 }
