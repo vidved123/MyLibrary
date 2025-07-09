@@ -113,10 +113,11 @@ Requirements to start the project
 3) Start the redis server using redis-server
 4) Start MySQL server
 5) Create a virtual environment and then run the python app using python app.py
-   PS: Do not run the python code without a virtual environment
+   (PS: Do not run the python code without a virtual environment)
 6) Start the program in 127.0.0.1:5000
 
 7) Admin users details 
+
    username: librarian123
    password: Library@123
 
