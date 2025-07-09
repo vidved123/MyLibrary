@@ -69,39 +69,39 @@ a)	Search and Filter: Users can search and filter the catalogue to see what book
 3.Roles of the Code
 The code consists of various components working together to provide a robust library management system:
 1.	Flask (Backend Framework)
-o	Flask handles routing and request processing, acting as the backbone of the application. It manages user actions like borrowing books, returning books, and managing users, while handling both GET and POST requests securely.
+a)	Flask handles routing and request processing, acting as the backbone of the application. It manages user actions like borrowing books, returning books, and managing users, while handling both GET and POST requests securely.
 
 2.	HTML/CSS/JavaScript (Frontend)
-o	HTML structures the web pages, including forms and tables for borrowing and returning books.
+a)	HTML structures the web pages, including forms and tables for borrowing and returning books.
 
-o	CSS is responsible for styling these pages to ensure they are visually appealing and user-friendly.
+b)	CSS is responsible for styling these pages to ensure they are visually appealing and user-friendly.
 
-o	JavaScript (jQuery) facilitates interactive features such as AJAX-based searches and dynamic form submissions, allowing real-time updates without page reloads.
+c)	JavaScript (jQuery) facilitates interactive features such as AJAX-based searches and dynamic form submissions, allowing real-time updates without page reloads.
 
 3.	MySQL (Database)
-o	MySQL stores all persistent data, including user details, book inventory, borrowing records, and system logs.
+a)	MySQL stores all persistent data, including user details, book inventory, borrowing records, and system logs.
 
-o	The system uses SQL queries to manage CRUD operations on the data, ensuring data integrity and real-time synchronization across the application.
+b)	The system uses SQL queries to manage CRUD operations on the data, ensuring data integrity and real-time synchronization across the application.
 
 4.	Role-Based Access Control
-o	The system uses session management to differentiate between Admin and Regular User roles, ensuring that only authorized users can access restricted functionalities.
+a)	The system uses session management to differentiate between Admin and Regular User roles, ensuring that only authorized users can access restricted functionalities.
 
 4.Potential Use Cases
 The LMS is versatile and can be adapted for a variety of environments, including:
 1.	Public Libraries
-o	This system can automate the borrowing and returning process in public libraries. Admins (librarians) manage the inventory, while patrons (regular users) borrow and return books independently.
+a)	This system can automate the borrowing and returning process in public libraries. Admins (librarians) manage the inventory, while patrons (regular users) borrow and return books independently.
 
 2.	University or School Libraries
-o	Educational institutions can benefit from this system, enabling students and staff to manage borrowing efficiently. Librarians can control the entire inventory, while students can easily search, borrow, and return books.
+a)	Educational institutions can benefit from this system, enabling students and staff to manage borrowing efficiently. Librarians can control the entire inventory, while students can easily search, borrow, and return books.
 
 3.	Corporate Libraries
-o	Large companies with internal libraries can use this system to manage the lending of books, manuals, or reference materials. Admins handle the library collection, while employees act as regular users.
+a)	Large companies with internal libraries can use this system to manage the lending of books, manuals, or reference materials. Admins handle the library collection, while employees act as regular users.
 
 4.	Online Resource Centres
-o	The system can be adapted to manage digital resources such as eBooks or PDFs. Instead of physical books, admins could upload digital files, and users could download them through the system.
+a)	The system can be adapted to manage digital resources such as eBooks or PDFs. Instead of physical books, admins could upload digital files, and users could download them through the system.
 
 5.	Community Resource Hubs
-o	Small community centres could use this system to manage shared resources like books, tools, or equipment. Admins would oversee the inventory, while community members borrow items as needed.
+a)	Small community centres could use this system to manage shared resources like books, tools, or equipment. Admins would oversee the inventory, while community members borrow items as needed.
 
 By incorporating both user-friendly functionality and administrative tools, the Library Management System is a comprehensive solution for modernizing and streamlining library operations in various settings.
 
