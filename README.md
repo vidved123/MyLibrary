@@ -12,6 +12,7 @@ The LMS manages the library’s book inventory, user roles, and borrowing/return
 1.	 Admin User
 Responsibilities:
 1.	Library Management
+
 a)	Admins oversee the entire library system. This includes managing the book catalogue and user database to ensure that operations run smoothly.
 
 b)	They are responsible for maintaining an up-to-date catalogue, ensuring book availability matches the physical inventory, and managing user access.
