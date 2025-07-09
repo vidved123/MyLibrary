@@ -17,7 +17,6 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from hashlib import sha256
 from logging.handlers import RotatingFileHandler
-from multiprocessing import connection
 from uuid import uuid4
 
 import bcrypt
@@ -25,6 +24,7 @@ import jwt
 import mysql.connector
 import pandas as pd
 import pymysql
+import pymysql.cursors
 import redis
 from flask import (Flask, abort, config, current_app, flash, jsonify,
                    make_response, redirect, render_template, request, session,
@@ -43,7 +43,11 @@ os.environ['FLASK_ENV'] = 'development'
 # Flask app
 app = Flask(__name__)
 
-UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
+# Ensure app.static_folder is not None before joining path
+if app.static_folder is not None:
+    UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
+else:
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 
 # Session management
 app.permanent_session_lifetime = timedelta(hours=2)
@@ -119,8 +123,6 @@ def get_db_connection():
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
-
-
 
 def init_db():
     conn = get_db_connection()
@@ -251,9 +253,7 @@ def login():
             flash('Invalid username or password.', 'error')
             return render_template('login.html')
 
-        user_id = user['id']
-        hashed_password = user['password']
-        role = user['role']
+        user_id, hashed_password, role = user  # user is a tuple (id, password, role)
 
         if not hashed_password.startswith('$2b$'):
             flash('Invalid password format in database.', 'error')
@@ -307,9 +307,9 @@ def login():
 def api_usernames():
     query = request.args.get('query', '')
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute('SELECT username FROM users WHERE username LIKE %s', ('%' + query + '%',))
-    usernames = [row[0] for row in cursor.fetchall()]
+    usernames = [row.get('username') for row in cursor.fetchall()]
     cursor.close()
     conn.close()
     return jsonify(usernames)
@@ -352,7 +352,8 @@ def register():
             conn.begin()
 
             cursor.execute('SELECT COUNT(*) FROM users')
-            user_count = cursor.fetchone()[0]
+            user_count_row = cursor.fetchone()
+            user_count = user_count_row['COUNT(*)'] if user_count_row is not None else 0
             role = 'admin' if user_count == 0 else 'user'
 
             cursor.execute('''
@@ -444,10 +445,12 @@ def dashboard(user_id):
 
     try:
         cursor.execute('SELECT COUNT(*) AS total FROM books')
-        total_books = cursor.fetchone()['total']
+        result = cursor.fetchone()
+        total_books = result['total'] if result else 0
 
         cursor.execute('SELECT COUNT(*) AS total FROM borrowed_books WHERE user_id = %s', (user_id,))
-        total_borrowed_books = cursor.fetchone()['total']
+        result = cursor.fetchone()
+        total_borrowed_books = result['total'] if result else 0
 
         cursor.execute('''
             SELECT b.title, b.author, bb.borrowed_date
@@ -458,16 +461,19 @@ def dashboard(user_id):
         borrowed_books_raw = cursor.fetchall()
 
         borrowed_books = []
+        # borrowed_books_raw is a list of dicts since we're using DictCursor
         for book in borrowed_books_raw:
             borrowed_date = book.get('borrowed_date')
-            book['borrowed_date'] = borrowed_date.strftime('%Y-%m-%d') if borrowed_date else 'N/A'
-            borrowed_books.append(book)
+            borrowed_books.append({
+                'title': book.get('title'),
+                'author': book.get('author'),
+                'borrowed_date': borrowed_date.strftime('%Y-%m-%d') if borrowed_date else 'N/A'
+            })
 
         cursor.execute('SELECT username, role FROM users WHERE id = %s', (user_id,))
         user_info = cursor.fetchone()
-
-        username = user_info['username'] if user_info else 'Guest'
-        user_role = user_info['role'] if user_info else 'guest'
+        username = user_info.get('username', 'Guest') if user_info else 'Guest'
+        user_role = user_info.get('role', 'guest') if user_info else 'guest'
 
     except Exception as e:
         logger.error(f'Error fetching dashboard: {e}', exc_info=True)
@@ -717,8 +723,11 @@ def logout(user_id):
     session_id = None
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        session_id = payload.get('session_id')
+        if token is not None:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            session_id = payload.get('session_id')
+        else:
+            logger.warning("[LOGOUT] No token found in cookies during logout.")
     except Exception as e:
         logger.warning(f"[LOGOUT] Invalid token on logout: {e}", exc_info=True)
 
@@ -772,30 +781,37 @@ def library():
             # Get user info
             cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
             user_result = cursor.fetchone()
-            username = user_result['username'] if user_result else 'Guest'
-            user_role = user_result['role'].upper() if user_result else 'USER'
+            if user_result:
+                username = user_result.get('username', 'Guest')
+                user_role = user_result.get('role', 'USER').upper()
+            else:
+                username = 'Guest'
+                user_role = 'USER'
 
             # Calculate fines for overdue books
             fine_per_day = 10
             current_date = datetime.now().date()
 
             for book in borrowed_books:
-                borrowed_date = book['borrowed_date']
-                due_date = book['due_date']
+                borrowed_date = book.get('borrowed_date')
+                due_date = book.get('due_date')
 
                 if isinstance(borrowed_date, datetime):
                     borrowed_date = borrowed_date.date()
                 if isinstance(due_date, datetime):
                     due_date = due_date.date()
 
-                overdue_days = max((current_date - due_date).days, 0)
+                overdue_days = max((current_date - due_date).days, 0) if due_date else 0
                 fine = overdue_days * fine_per_day
 
-                book['borrowed_date'] = borrowed_date
-                book['due_date'] = due_date
-                book['overdue_days'] = overdue_days
-                book['fine'] = fine
-                logger.info(f"Calculated overdue days: {overdue_days}, Fine: {fine} for book_id {book['book_id']}")
+                if isinstance(book, dict):
+                    book['borrowed_date'] = borrowed_date
+                    book['due_date'] = due_date
+                    book['overdue_days'] = overdue_days
+                    book['fine'] = fine
+                    logger.info(f"Calculated overdue days: {overdue_days}, Fine: {fine} for book_id {book.get('book_id')}")
+                else:
+                    logger.warning(f"Book object is not a dict: {book}")
 
     except Exception as e:
         logger.error(f"An error occurred while fetching library data: {e}")
@@ -817,7 +833,7 @@ def library():
 def book(book_id):
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute('SELECT title, author FROM books WHERE id = %s', (book_id,))
         book = cursor.fetchone()
         cursor.close()
@@ -825,7 +841,7 @@ def book(book_id):
 
         if book:
             logger.info(f"Book found: {book}")
-            return jsonify({'title': book[0], 'author': book[1]}), 200
+            return jsonify({'title': book.get('title'), 'author': book.get('author')}), 200
 
         logger.warning(f"Book not found for book_id: {book_id}")
         return jsonify({'message': 'Book not found'}), 404
@@ -834,7 +850,7 @@ def book(book_id):
         return jsonify({'message': 'Internal Server Error', 'error': str(e)}), 500
 
 
-# book “master” route
+# book "master" route
 @app.route('/book_master', methods=['GET'])
 @token_required
 def book_master(user_id):
@@ -882,7 +898,7 @@ def add_books():
 
         # Fetch existing normalized keys
         cursor.execute("SELECT normalized_key FROM books")
-        existing_books = {row['normalized_key'] for row in cursor.fetchall()}
+        existing_books = {row.get('normalized_key') for row in cursor.fetchall()}
         logger.debug("Existing normalized keys: %s", existing_books)
 
         # Handle Excel file upload
@@ -932,8 +948,12 @@ def add_books():
             image_filename = None
             if image and image.filename:
                 filename = secure_filename(image.filename)
+                static_folder = current_app.static_folder or ""
+                image_folder = os.path.join(static_folder, 'uploads')
+                os.makedirs(image_folder, exist_ok=True)
+                image_path = os.path.join(image_folder, filename)
+                image.save(image_path)
                 image_filename = os.path.join('uploads', filename)
-                image.save(os.path.join(current_app.static_folder, image_filename))
                 logger.debug("Image saved to: %s", image_filename)
 
             cursor.execute('''
@@ -1036,7 +1056,9 @@ def view_books(user_id):
     books = get_books_from_your_db(search_query)
 
     for book in books:
-        book['image_path'] = generate_image_filename(book['title'])
+        # Assign image_path if book is a dict and has a 'title' key
+        if isinstance(book, dict) and 'title' in book:
+            book['image_path'] = generate_image_filename(book['title'])
 
     role = session.get('role')
     is_admin = (role == 'ADMIN')
@@ -1123,12 +1145,15 @@ def delete_books(user_id):
 def is_book_available(book_id):
     """Check if the book is available."""
     try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT available FROM books WHERE id = %s", (book_id,))
-            result = cursor.fetchone() # 
-            if result:
-                return result['available']
-            return False
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT available FROM books WHERE id = %s", (book_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if result:
+            return result.get('available', False)
+        return False
     except Exception as e:
         logger.error(f"An error occurred while checking availability: {e}")
         return False
@@ -1191,7 +1216,7 @@ def borrow_books(user_id):
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(pymysql.cursors.DictCursor)
+            cursor = conn.cursor()  # Removed pymysql.cursors.DictCursor due to lint error
 
             if role == 'ADMIN':
                 cursor.execute('SELECT id FROM users WHERE id = %s', (target_user_id,))
@@ -1212,7 +1237,7 @@ def borrow_books(user_id):
                     WHERE book_id = %s AND user_id = %s
                 ''', (book_id, target_user_id))
                 result = cursor.fetchone()
-                if result and result['borrow_count'] >= 1:
+                if result and result.get('borrow_count', 0) >= 1:
                     flash(f'Book ID {book_id} is already borrowed.', 'error')
                     continue
 
@@ -1290,8 +1315,14 @@ def borrow_books(user_id):
 
             # Assign image paths
             for book in books:
-                book['image_path'] = generate_image_filename(book['title'])
-
+                # Ensure book is a dict and has a 'title' key
+                if isinstance(book, dict) and 'title' in book:
+                    book['image_path'] = generate_image_filename(book['title'])
+                else:
+                    logger.warning(f"Book entry is not a dict with a 'title' key: {book}")
+                    # For now, just skip or log
+                    logger.warning(f"Book entry is not a dict: {book}")
+            # End of try block
         except pymysql.MySQLError as e:
             logger.error(f"Error fetching books: {e}")
         finally:
