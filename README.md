@@ -104,3 +104,21 @@ o	The system can be adapted to manage digital resources such as eBooks or PDFs. 
 o	Small community centres could use this system to manage shared resources like books, tools, or equipment. Admins would oversee the inventory, while community members borrow items as needed.
 
 By incorporating both user-friendly functionality and administrative tools, the Library Management System is a comprehensive solution for modernizing and streamlining library operations in various settings.
+
+
+Requirements to start the project
+
+1) Any coding software which has python in it
+2) Install the requirements.txt in the terminal so that you have the required packages to work the program
+3) Start the redis server using redis-server
+4) Start MySQL server
+5) Create a virtual environment and then run the python app using python app.py
+   PS: Do not run the python code without a virtual environment
+6) Start the program in 127.0.0.1:5000
+
+7) Admin users details 
+   username: librarian123
+   password: Library@123
+
+   username: librarian456
+   password: Library@123
