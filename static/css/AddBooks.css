@@ -1,37 +1,62 @@
-/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    min-height: 100vh;
+    animation: fadeInBody 1s ease;
+    overflow: hidden;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* Main Container */
 .container {
     max-width: 500px;
     width: 90%;
-    padding: 40px;
-    background: #ffffff;
+    padding: 44px 32px;
+    background: rgba(255, 255, 255, 0.75);
     border-radius: 20px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    backdrop-filter: blur(8px);
     transition: transform 0.3s ease;
+    animation: fadeInUp 1s 0.2s both;
+    max-height: 90vh;
+    overflow: auto;
 }
 .container:hover {
     transform: translateY(-2px);
 }
 
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Heading */
 h1 {
     text-align: center;
-    color: #2c3e50;
-    margin-bottom: 25px;
-    font-size: 32px;
+    color: #4682b4;
+    margin-bottom: 28px;
+    font-size: 2em;
     font-weight: 700;
     letter-spacing: 1.5px;
+    text-shadow: 1px 2px 12px rgba(70, 130, 180, 0.10);
+    animation: fadeInDown 1s 0.3s both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Nav Buttons */
@@ -43,16 +68,21 @@ h1 {
 }
 .nav-buttons a {
     text-decoration: none;
-    color: #3498db;
+    color: #fff;
     font-weight: 600;
-    padding: 10px 16px;
-    border: 2px solid #3498db;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    font-size: 1.1em;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 .nav-buttons a:hover {
-    background-color: #3498db;
-    color: white;
+    background: linear-gradient(90deg, #357ab8 0%, #45a049 100%);
+    color: #fff;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
 
 /* Form Styling (Optional if forms exist later) */
@@ -71,22 +101,25 @@ button {
     width: 100%;
     box-sizing: border-box;
     transition: all 0.3s ease;
+    font-family: inherit;
 }
 input[type="text"],
 input[type="number"] {
-    border: 1px solid #dcdcdc;
+    border: 1.5px solid #b0c4de;
+    background: rgba(240, 248, 255, 0.6);
 }
 input[type="file"] {
-    border: 1px solid #dcdcdc;
+    border: 1.5px solid #b0c4de;
     background-color: #fefefe;
 }
 input:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+    border-color: #4682b4;
+    box-shadow: 0 0 0 2px #b0c4de33;
     outline: none;
+    background: #fff;
 }
 button {
-    background-color: #3498db;
+    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
     color: white;
     font-size: 18px;
     font-weight: 600;
@@ -94,14 +127,18 @@ button {
     border-radius: 10px;
     padding: 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.15s ease;
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    outline: none;
+    margin-top: 8px;
 }
 button:hover {
-    background-color: #2980b9;
+    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
     transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
 button:active {
-    background-color: #1c5980;
+    background: #1c5980;
     transform: scale(0.99);
 }
 
@@ -109,19 +146,22 @@ button:active {
 .back-link {
     display: inline-block;
     text-align: center;
-    background-color: #7f8c8d;
+    background: linear-gradient(90deg, #6c757d 0%, #b0c4de 100%);
     color: #fff;
     padding: 14px;
     border-radius: 10px;
     margin-top: 25px;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 1em;
     width: 100%;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 .back-link:hover {
-    background-color: #636e72;
-    transform: translateY(-1px);
+    background: linear-gradient(90deg, #5a6268 0%, #b0c4de 100%);
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
 
 /* Flash Messages */
@@ -143,12 +183,21 @@ button:active {
 .flash-messages li.error {
     background-color: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border: 1.5px solid #f5c6cb;
 }
 .flash-messages li.success {
     background-color: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border: 1.5px solid #c3e6cb;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    background: #e0eafc;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4de;
+    border-radius: 8px;
 }
 
 /* Responsive Design */
