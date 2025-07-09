@@ -1,40 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 body {
-    font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Montserrat', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f9;
+    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
     color: #333;
+    min-height: 100vh;
+    animation: fadeInBody 1s ease;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .book-master-container {
     max-width: 1000px;
-    margin: 40px auto;
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    margin: 48px auto;
+    background: rgba(255, 255, 255, 0.75);
+    padding: 40px 32px;
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    backdrop-filter: blur(8px);
+    animation: fadeInUp 1s 0.2s both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 h1 {
-    font-size: 40px;
+    font-size: 2.5em;
     text-align: center;
-    color: #007bff;
+    color: #4682b4;
     margin-bottom: 30px;
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid #4682b4;
     padding-bottom: 10px;
+    text-shadow: 1px 2px 12px rgba(70, 130, 180, 0.10);
+    animation: fadeInDown 1s 0.3s both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 h2 {
-    font-size: 26px;
+    font-size: 1.4em;
     color: #495057;
     margin-bottom: 25px;
     font-weight: 600;
     text-align: left;
     border-bottom: 1px solid #ddd;
     padding-bottom: 5px;
+    letter-spacing: 0.5px;
 }
 
 /* Responsive Table */
@@ -47,18 +71,26 @@ table {
     width: 100%;
     min-width: 800px;
     border-collapse: collapse;
-    background-color: #fafafa;
+    background: rgba(250,250,250,0.85);
     font-size: 18px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(70, 130, 180, 0.07);
+    animation: fadeIn 1s 0.5s both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 th, td {
     padding: 16px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #e0eafc;
 }
 
 th {
-    background-color: #007bff;
+    background: linear-gradient(90deg, #4682b4 0%, #4CAF50 100%);
     color: #fff;
     font-weight: 600;
     letter-spacing: 0.05rem;
@@ -67,43 +99,55 @@ th {
 }
 
 tr:hover td {
-    background-color: #f1f3f5;
-    transition: background-color 0.3s ease;
+    background: #e0eafc;
+    transition: background 0.3s;
 }
 
 /* Button Styling */
 .back-link {
     display: inline-block;
     margin-top: 25px;
-    padding: 12px 25px;
-    font-size: 18px;
-    font-weight: 500;
+    padding: 14px 28px;
+    font-size: 1.1em;
+    font-weight: 600;
     color: #fff;
     text-decoration: none;
-    border-radius: 6px;
-    background-color: #007bff;
-    transition: background-color 0.3s ease;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #6c757d 0%, #b0c4de 100%);
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     text-align: center;
 }
 
 .back-link:hover {
-    background-color: #0056b3;
+    background: linear-gradient(90deg, #5a6268 0%, #b0c4de 100%);
     color: #fff;
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    background: #e0eafc;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4de;
+    border-radius: 8px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .book-master-container {
         width: 95%;
-        padding: 20px;
+        padding: 20px 6px;
     }
 
     h1 {
-        font-size: 32px;
+        font-size: 2em;
     }
 
     h2 {
-        font-size: 22px;
+        font-size: 1.1em;
     }
 
     th, td {
@@ -112,5 +156,9 @@ tr:hover td {
 
     table {
         font-size: 16px;
+    }
+    .back-link {
+        font-size: 1em;
+        padding: 10px 12px;
     }
 }
