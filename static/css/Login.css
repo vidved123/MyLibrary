@@ -1,7 +1,8 @@
-/* Global styles */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #e9f0f7;
+    font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
     margin: 0;
     padding: 0;
     display: flex;
@@ -9,90 +10,135 @@ body {
     align-items: center;
     height: 100vh;
     color: #333;
+    min-height: 100vh;
+    animation: fadeInBody 1s ease;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .container {
-    background-color: #fff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.75);
+    padding: 48px 36px;
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
     width: 100%;
     max-width: 400px;
     text-align: center;
     position: relative;
-    transition: box-shadow 0.3s ease;
+    transition: box-shadow 0.3s ease, background 0.3s;
+    backdrop-filter: blur(8px);
+    animation: fadeInUp 1s 0.2s both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .container:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 48px rgba(70, 130, 180, 0.18);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 h2 {
     margin-bottom: 30px;
-    color: #007bff;
-    font-size: 28px;
+    color: #4682b4;
+    font-size: 2em;
     font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 2px 12px rgba(70, 130, 180, 0.10);
+    animation: fadeInDown 1s 0.3s both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 22px;
     text-align: left;
     position: relative;
+    animation: fadeIn 1s 0.5s both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-size: 16px;
-    color: #555;
+    font-size: 15px;
+    color: #4682b4;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: color 0.3s;
 }
 
 .form-group input[type="text"],
 .form-group input[type="password"] {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 14px 14px 14px 16px;
+    border: 1.5px solid #b0c4de;
+    border-radius: 7px;
     font-size: 16px;
     box-sizing: border-box;
-    transition: border-color 0.3s ease;
+    background: rgba(240, 248, 255, 0.6);
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+    outline: none;
+    font-family: inherit;
 }
 
 .form-group input[type="text"]:focus,
 .form-group input[type="password"]:focus {
-    border-color: #007bff;
-    outline: none;
+    border-color: #4682b4;
+    background: #fff;
+    box-shadow: 0 0 0 2px #b0c4de33;
 }
 
 .form-group input[type="submit"],
 button {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
+    border-radius: 7px;
+    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
     color: #fff;
-    font-size: 16px;
+    font-size: 1.1em;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    outline: none;
+    margin-top: 8px;
 }
 
 .form-group input[type="submit"]:hover,
 button:hover {
-    background-color: #0056b3;
+    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
 
 .message {
     text-align: center;
     margin-top: 15px;
-    color: red;
+    color: #e74c3c;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    animation: fadeIn 0.7s 0.7s both;
 }
 
 ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
-    color: red;
+    color: #e74c3c;
 }
 
 ul li {
@@ -100,7 +146,7 @@ ul li {
 }
 
 .suggestions {
-    border: 1px solid #ccc;
+    border: 1.5px solid #b0c4de;
     border-top: none;
     max-height: 150px;
     overflow-y: auto;
@@ -110,7 +156,8 @@ ul li {
     z-index: 1000;
     top: 100%;
     left: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(70, 130, 180, 0.13);
+    border-radius: 0 0 7px 7px;
 }
 
 .suggestion-item {
@@ -120,29 +167,39 @@ ul li {
 }
 
 .suggestion-item:hover {
-    background: #f0f0f0;
+    background: #e0eafc;
 }
 
 .forgot-password {
     display: block;
-    margin-top: 10px;
+    margin-top: 12px;
     font-size: 14px;
-    color: #555;
+    color: #4682b4;
     text-decoration: none;
-    transition: color 0.3s ease;
+    font-weight: 500;
+    transition: color 0.3s;
 }
 
 .forgot-password:hover {
-    color: #007bff;
+    color: #4CAF50;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    background: #e0eafc;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4de;
+    border-radius: 8px;
 }
 
 @media (max-width: 600px) {
     .container {
-        padding: 20px;
+        padding: 20px 8px;
     }
 
     h2 {
-        font-size: 24px;
+        font-size: 1.3em;
     }
 
     .form-group input[type="text"],
