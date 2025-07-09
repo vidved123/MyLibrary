@@ -1,137 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
     color: #333;
     margin: 0;
     padding: 0;
+    min-height: 100vh;
+    animation: fadeInBody 1s ease;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 h1 {
-    color: #007bff;
+    color: #4682b4;
     font-size: 2.5em;
     text-align: center;
-    margin-top: 20px;
+    margin-top: 32px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 2px 12px rgba(70, 130, 180, 0.10);
+    animation: fadeInDown 1s 0.2s both;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .container {
     width: 90%;
     max-width: 900px;
-    margin: 20px auto;
-    padding: 30px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin: 32px auto;
+    padding: 40px 32px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
     text-align: center;
+    backdrop-filter: blur(8px);
+    animation: fadeInUp 1s 0.3s both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 p {
     font-size: 20px;
     line-height: 1.6;
     margin: 15px 0;
+    color: #555;
+    animation: fadeIn 1s 0.5s both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .button-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px 0;
+    margin: 28px 0;
+    gap: 16px;
 }
 
 a {
     margin: 10px;
-    padding: 12px 20px;
-    font-size: 18px;
+    padding: 16px 28px;
+    font-size: 1.15em;
     color: #fff;
     text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.3s, transform 0.3s;
-    width: 200px;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    width: 220px;
+    font-weight: 600;
+    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    letter-spacing: 0.5px;
+    outline: none;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
 }
 
 a:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
+    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
 }
 
 .logout-btn {
-    background-color: #f44336;
+    background: linear-gradient(90deg, #f44336 0%, #ff6f61 100%);
 }
 
 .logout-btn:hover {
-    background-color: #d32f2f;
+    background: linear-gradient(90deg, #d32f2f 0%, #ff6f61 100%);
 }
 
 .back-home-btn {
-    background-color: #28a745;
+    background: linear-gradient(90deg, #28a745 0%, #6dd5ed 100%);
 }
 
 .back-home-btn:hover {
-    background-color: #218838;
+    background: linear-gradient(90deg, #218838 0%, #6dd5ed 100%);
 }
 
-.add-user-btn {
-    background-color: #007bff;
+.add-user-btn, .users-roster-btn {
+    background: linear-gradient(90deg, #007bff 0%, #00c6ff 100%);
 }
 
-.add-user-btn:hover {
-    background-color: #0056b3;
+.add-user-btn:hover, .users-roster-btn:hover {
+    background: linear-gradient(90deg, #0056b3 0%, #00c6ff 100%);
 }
 
 .delete-user-btn {
-    background-color: #dc3545;
+    background: linear-gradient(90deg, #dc3545 0%, #ff758c 100%);
 }
 
 .delete-user-btn:hover {
-    background-color: #c82333;
-}
-
-.users-roster-btn {
-    background-color: #007bff;
-}
-
-.users-roster-btn:hover {
-    background-color: #0056b3;
+    background: linear-gradient(90deg, #c82333 0%, #ff758c 100%);
 }
 
 .library-btn {
-    background-color: #17a2b8;
+    background: linear-gradient(90deg, #17a2b8 0%, #43cea2 100%);
 }
 
 .library-btn:hover {
-    background-color: #138496;
+    background: linear-gradient(90deg, #138496 0%, #43cea2 100%);
 }
 
 .profile-btn {
-    background-color: #6f42c1;
+    background: linear-gradient(90deg, #6f42c1 0%, #b06ab3 100%);
 }
 
 .profile-btn:hover {
-    background-color: #5936a2;
+    background: linear-gradient(90deg, #5936a2 0%, #b06ab3 100%);
 }
 
 ul {
     list-style: none;
     padding: 0;
     text-align: left;
-    margin: 20px auto;
+    margin: 24px auto;
     max-width: 600px;
+    animation: fadeIn 1s 0.6s both;
 }
 
 ul li {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    padding: 12px;
+    border-bottom: 1px solid #e0eafc;
     background-color: #f9f9f9;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+    border-radius: 6px;
+    transition: background 0.3s;
+    margin-bottom: 6px;
 }
 
 ul li:hover {
-    background-color: #f1f1f1;
+    background: #e0eafc;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    background: #e0eafc;
+}
+::-webkit-scrollbar-thumb {
+    background: #b0c4de;
+    border-radius: 8px;
 }
 
 @media (max-width: 768px) {
     .container {
         width: 95%;
-        padding: 20px;
+        padding: 20px 6px;
     }
 
     h1 {
@@ -143,7 +189,11 @@ ul li:hover {
     }
 
     a {
-        font-size: 16px;
-        padding: 10px 15px;
+        font-size: 1em;
+        padding: 12px 10px;
+        width: 100%;
+    }
+    .button-group {
+        gap: 10px;
     }
 }
