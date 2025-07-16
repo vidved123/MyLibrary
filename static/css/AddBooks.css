@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     margin: 0;
     padding: 0;
     display: flex;
@@ -24,10 +24,11 @@ body {
     max-width: 500px;
     width: 90%;
     padding: 44px 32px;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     border-radius: 20px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
-    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     transition: transform 0.3s ease;
     animation: fadeInUp 1s 0.2s both;
     max-height: 90vh;
@@ -73,13 +74,14 @@ h1 {
     padding: 12px 24px;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
     font-size: 1.1em;
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    text-transform: uppercase;
 }
 .nav-buttons a:hover {
-    background: linear-gradient(90deg, #357ab8 0%, #45a049 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     color: #fff;
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
@@ -119,7 +121,7 @@ input:focus {
     background: #fff;
 }
 button {
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: white;
     font-size: 18px;
     font-weight: 600;
@@ -131,9 +133,10 @@ button {
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     outline: none;
     margin-top: 8px;
+    text-transform: uppercase;
 }
 button:hover {
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-1px) scale(1.01);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -146,7 +149,7 @@ button:active {
 .back-link {
     display: inline-block;
     text-align: center;
-    background: linear-gradient(90deg, #6c757d 0%, #b0c4de 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #fff;
     padding: 14px;
     border-radius: 10px;
@@ -157,9 +160,10 @@ button:active {
     font-weight: 600;
     box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    text-transform: uppercase;
 }
 .back-link:hover {
-    background: linear-gradient(90deg, #5a6268 0%, #b0c4de 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-1px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -213,4 +217,8 @@ button:active {
         padding: 12px;
         font-size: 16px;
     }
+}
+
+th, td {
+    text-transform: uppercase;
 }
