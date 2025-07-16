@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', Arial, sans-serif;
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     display: flex;
     justify-content: center;
     align-items: start;
@@ -20,17 +20,18 @@ body {
 }
 
 .container {
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     padding: 40px 32px;
     border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
     width: 100%;
     max-width: 700px;
     text-align: left;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px 24px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.2s both;
 }
 
@@ -93,8 +94,9 @@ select:focus {
 }
 
 input[type="submit"] {
+    text-transform: uppercase;
     padding: 14px 0;
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: white;
     border: none;
     border-radius: 7px;
@@ -109,7 +111,7 @@ input[type="submit"] {
 }
 
 input[type="submit"]:hover {
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -128,6 +130,10 @@ ul#error-list, .flashes {
 
 ul#error-list li, .flashes li {
     margin: 5px 0;
+}
+
+th, td {
+    text-transform: uppercase;
 }
 
 ::-webkit-scrollbar {
