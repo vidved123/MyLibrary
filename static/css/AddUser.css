@@ -5,7 +5,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     min-height: 100vh;
     animation: fadeInBody 1s ease;
     overflow: hidden;
@@ -21,10 +21,11 @@ body {
     max-width: 500px;
     margin: 48px auto;
     padding: 36px 24px;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
-    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.2s both;
     max-height: 90vh;
     overflow: auto;
@@ -112,9 +113,10 @@ select:focus {
 
 /* Submit button */
 button {
+    text-transform: uppercase;
     padding: 16px;
     font-size: 1.1em;
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: white;
     border: none;
     border-radius: 7px;
@@ -127,7 +129,7 @@ button {
 }
 
 button:hover {
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -139,7 +141,7 @@ button:hover {
 }
 
 .back-button a {
-    background: linear-gradient(90deg, #6c757d 0%, #b0c4de 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: white;
     text-decoration: none;
     padding: 14px 22px;
@@ -152,7 +154,7 @@ button:hover {
 }
 
 .back-button a:hover {
-    background: linear-gradient(90deg, #5a6268 0%, #b0c4de 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -182,4 +184,8 @@ button:hover {
         font-size: 0.95em;
         padding: 12px 10px;
     }
+}
+
+th, td {
+    text-transform: uppercase;
 }
