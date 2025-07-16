@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -34,8 +34,10 @@ table {
     width: 85%;
     margin: 56px auto;
     border-collapse: collapse;
-    background: rgba(255,255,255,0.85);
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    background: rgba(255,255,255,0.55);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     border-radius: 18px;
     overflow: hidden;
     animation: fadeInUp 1s 0.3s both;
@@ -50,10 +52,11 @@ th, td {
     padding: 18px 28px;
     text-align: left;
     font-size: 16px;
+    text-transform: uppercase;
 }
 
 th {
-    background: linear-gradient(90deg, #4682b4 0%, #4CAF50 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #fff;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -83,7 +86,7 @@ tr:hover td {
     padding: 14px 38px;
     margin: 48px auto;
     color: #fff;
-    background: linear-gradient(90deg, #28a745 0%, #43cea2 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     border: none;
     border-radius: 8px;
     text-decoration: none;
@@ -93,10 +96,11 @@ tr:hover td {
     box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
     transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
     outline: none;
+    text-transform: uppercase;
 }
 
 .button:hover {
-    background: linear-gradient(90deg, #218838 0%, #43cea2 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
     transform: translateY(-2px) scale(1.03);
 }
