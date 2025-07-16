@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
-    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     margin: 0;
     padding: 0;
     display: flex;
@@ -34,14 +34,15 @@ h1 {
 }
 
 .book-list-container {
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     padding: 32px 24px;
     margin: 48px auto;
     border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
     max-width: 800px;
     width: 100%;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.3s both;
 }
 
@@ -57,16 +58,17 @@ ul {
 }
 
 li {
-    background: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.92);
     padding: 20px;
     margin-bottom: 15px;
     border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(70, 130, 180, 0.07);
+    box-shadow: 0 5px 18px rgba(233, 64, 87, 0.09);
     display: flex;
     justify-content: space-between;
     align-items: center;
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     animation: fadeIn 1s 0.4s both;
+    border-left: 4px solid #e94057;
 }
 
 li:hover {
@@ -87,10 +89,11 @@ li span {
 }
 
 a {
+    text-transform: uppercase;
     text-decoration: none;
     color: #fff;
     padding: 12px 28px;
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     border-radius: 8px;
     transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
     font-size: 1.1em;
@@ -99,7 +102,7 @@ a {
 }
 
 a:hover {
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
     transform: translateY(-2px) scale(1.03);
 }
@@ -118,6 +121,10 @@ p {
 ::-webkit-scrollbar-thumb {
     background: #b0c4de;
     border-radius: 8px;
+}
+
+th, td {
+    text-transform: uppercase;
 }
 
 @media (max-width: 600px) {
