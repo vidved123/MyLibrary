@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 
 body {
-    font-family: 'Montserrat', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(90deg, #4e8fd3 0%, #43c37b 100%);
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #333;
     min-height: 100vh;
     animation: fadeInBody 1s ease;
+    margin: 0;
+    padding: 0;
 }
 
 @keyframes fadeInBody {
@@ -18,11 +18,12 @@ body {
 .book-master-container {
     max-width: 1000px;
     margin: 48px auto;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     padding: 40px 32px;
-    border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
-    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.2s both;
 }
 
@@ -74,7 +75,7 @@ table {
     background: rgba(250,250,250,0.85);
     font-size: 18px;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(70, 130, 180, 0.07);
+    box-shadow: 0 2px 12px rgba(138, 35, 135, 0.07);
     animation: fadeIn 1s 0.5s both;
 }
 
@@ -87,14 +88,14 @@ th, td {
     padding: 16px;
     text-align: left;
     border-bottom: 1px solid #e0eafc;
+    text-transform: uppercase;
 }
 
 th {
-    background: linear-gradient(90deg, #4682b4 0%, #4CAF50 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #fff;
     font-weight: 600;
     letter-spacing: 0.05rem;
-    text-transform: uppercase;
     font-size: 16px;
 }
 
@@ -112,22 +113,23 @@ tr:hover td {
     font-weight: 600;
     color: #fff;
     text-decoration: none;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #6c757d 0%, #b0c4de 100%);
-    box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
+    border-radius: 10px;
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
+    box-shadow: 0 4px 24px rgba(138, 35, 135, 0.10);
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     text-align: center;
+    text-transform: uppercase;
 }
 
 .back-link:hover {
-    background: linear-gradient(90deg, #5a6268 0%, #b0c4de 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     color: #fff;
     transform: translateY(-1px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
+    box-shadow: 0 8px 32px rgba(242, 113, 33, 0.18);
 }
 
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 8px;
     background: #e0eafc;
 }
 ::-webkit-scrollbar-thumb {
