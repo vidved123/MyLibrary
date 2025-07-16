@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #333;
     margin: 0;
     padding: 0;
@@ -36,11 +36,12 @@ h1 {
     max-width: 900px;
     margin: 32px auto;
     padding: 40px 32px;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
     text-align: center;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.3s both;
 }
 
@@ -71,6 +72,7 @@ p {
 }
 
 a {
+    text-transform: uppercase;
     margin: 10px;
     padding: 16px 28px;
     font-size: 1.15em;
@@ -81,7 +83,7 @@ a {
     width: 220px;
     font-weight: 600;
     box-shadow: 0 4px 24px rgba(70, 130, 180, 0.10);
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     letter-spacing: 0.5px;
     outline: none;
     display: inline-block;
@@ -92,7 +94,7 @@ a {
 a:hover {
     transform: translateY(-3px) scale(1.04);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
 }
 
 .logout-btn {
@@ -172,6 +174,10 @@ ul li:hover {
 ::-webkit-scrollbar-thumb {
     background: #b0c4de;
     border-radius: 8px;
+}
+
+th, td {
+    text-transform: uppercase;
 }
 
 @media (max-width: 768px) {
