@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Montserrat', 'Roboto', Arial, sans-serif;
-    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     margin: 0;
     padding: 0;
     display: flex;
@@ -20,16 +20,17 @@ body {
 }
 
 .container {
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.55);
     padding: 48px 36px;
     border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(70, 130, 180, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+    box-shadow: 0 8px 40px rgba(138, 35, 135, 0.13), 0 1.5px 4px rgba(233, 64, 87, 0.07);
     width: 100%;
     max-width: 400px;
     text-align: center;
     position: relative;
     transition: box-shadow 0.3s ease, background 0.3s;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1.5px solid rgba(255,255,255,0.25);
     animation: fadeInUp 1s 0.2s both;
 }
 
@@ -107,7 +108,7 @@ button {
     padding: 14px;
     border: none;
     border-radius: 7px;
-    background: linear-gradient(90deg, #4CAF50 0%, #4682b4 100%);
+    background: linear-gradient(90deg, #8a2387 0%, #e94057 50%, #f27121 100%);
     color: #fff;
     font-size: 1.1em;
     font-weight: 600;
@@ -116,11 +117,12 @@ button {
     transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     outline: none;
     margin-top: 8px;
+    text-transform: uppercase;
 }
 
 .form-group input[type="submit"]:hover,
 button:hover {
-    background: linear-gradient(90deg, #45a049 0%, #357ab8 100%);
+    background: linear-gradient(90deg, #f27121 0%, #e94057 50%, #8a2387 100%);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 8px 32px rgba(70, 130, 180, 0.18);
 }
@@ -213,4 +215,29 @@ ul li {
         padding: 10px;
         font-size: 14px;
     }
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.button-group button,
+.button-group .register-button {
+    width: 100%;
+    margin-top: 0;
+    border-radius: 7px;
+    font-size: 1.1em;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+.register-button {
+    margin-top: 0;
+}
+
+th, td {
+    text-transform: uppercase;
 }
