@@ -11,8 +11,8 @@
     <div class="container">
         <h1>View Books</h1>
 
-        <form method="GET" action="{{ url_for('view_books') }}" class="search-form">
-            <input type="text" name="search" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
+        <form method="GET" action="{{ url_for('view_books') }}" class="search-form" id="search-form">
+            <input type="text" name="search" id="search-input" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
             <button type="submit">Search</button>
         </form>
 
@@ -28,23 +28,27 @@
                     <th>Total Copies</th>
                     <th>Available Copies</th>
                 </tr>
-                {% for book in books %}
-                <tr>
-                    {% if is_admin %}
-                    <td><input type="checkbox" name="book_ids" value="{{ book.book_id }}"></td>
-                    {% endif %}
-                    <td>{{ book.title }}</td>
-                    <td>{{ book.author }}</td>
-                    <td>
-                        <img src="{{ url_for('static', filename='images/' + book.image_path) }}"
-                             alt="{{ book.title }}"
-                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default.jpg') }}';"
-                             style="width: 100px; height: auto;">
-                    </td>
-                    <td>{{ book.total_copies }}</td>
-                    <td>{{ book.available_copies }}</td>
-                </tr>
-                {% endfor %}
+                <tbody id="books-tbody">
+                    {% for book in books %}
+                    <tr>
+                        {% if is_admin %}
+                        <td><input type="checkbox" name="book_ids" value="{{ book.book_id }}"></td>
+                        {% endif %}
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>
+                            <a href="{{ url_for('book', book_id=book.book_id) }}">
+                                <img src="{{ url_for('static', filename='images/' ~ (book.image_path or 'default.jpg')) }}"
+                                     alt="{{ book.title }}"
+                                     onerror="this.src='/static/images/default.jpg'"
+                                     style="width: 100px; height: auto;" />
+                            </a>
+                        </td>
+                        <td>{{ book.total_copies }}</td>
+                        <td>{{ book.available_copies }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
 
             {% if is_admin %}
@@ -122,6 +126,24 @@
             const deleteButton = document.getElementById('delete-btn');
             if (deleteButton) {
                 deleteButton.addEventListener('click', deleteBooks);
+            }
+
+            // Debounced AJAX live search
+            const searchInput = document.getElementById('search-input');
+            const booksTbody = document.getElementById('books-tbody');
+            let debounceTimeout = null;
+            if (searchInput && booksTbody) {
+                searchInput.addEventListener('input', function () {
+                    if (debounceTimeout) clearTimeout(debounceTimeout);
+                    debounceTimeout = setTimeout(function () {
+                        const query = searchInput.value;
+                        fetch(`/api/books?search=${encodeURIComponent(query)}`)
+                            .then(response => response.text())
+                            .then(html => {
+                                booksTbody.innerHTML = html;
+                            });
+                    }, 300);
+                });
             }
         });
     </script>
