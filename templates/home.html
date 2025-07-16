@@ -6,120 +6,48 @@
     <title>Home</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/Home.css') }}">
     <script>
-        function isAuthenticated() {
-            return !!localStorage.getItem('token');
-        }
-
         function logout() {
-            localStorage.removeItem('token');
             fetch('/logout', {
-                method: 'GET'
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(() => {
                 window.location.href = '/';
             });
         }
-
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error('Server error: ' + text);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    window.location.href = '/';
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('There was a problem with the login operation:', error);
-                alert('Login failed: ' + error.message);
-            });
-        }
-
-        function register() {
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const fullName = document.getElementById('fullName').value;
-            const sex = document.getElementById('sex').value;
-            const mobileNumber = document.getElementById('mobileNumber').value;
-            const countryCode = document.getElementById('countryCode').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username, email, full_name: fullName, sex, mobile_number: mobileNumber,
-                    country_code: countryCode, password, confirm_password: confirmPassword
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error('Server error: ' + text);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.message === 'Registration successful!') {
-                    window.location.href = '/login';
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('There was a problem with the registration operation:', error);
-                alert('Registration failed: ' + error.message);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const nav = document.querySelector('nav');
-            const profileUrl = "{{ url_for('profile') }}";
-            const loginUrl = "{{ url_for('login') }}";
-            const registerUrl = "{{ url_for('register') }}";
-
-            if (isAuthenticated()) {
-                nav.innerHTML = `<div class="nav-buttons">
-                                    <a href="${profileUrl}">Profile</a> |
-                                    <a href="#" onclick="logout()">Logout</a>
-                                  </div>`;
-            } else {
-                nav.innerHTML = `<div class="nav-buttons">
-                                    <a href="${loginUrl}">Login</a> |
-                                    <a href="${registerUrl}">Register</a>
-                                  </div>`;
-            }
-        });
     </script>
 </head>
 <body>
     <h1>Welcome to the Library Home Page</h1>
     <p class="welcome-text">Explore a world of knowledge at your fingertips!</p>
-    <nav></nav>
+
+    <nav>
+        {% if logged_in %}
+        <div class="nav-buttons">
+            <a href="{{ url_for('profile') }}">Profile</a> |
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+        {% else %}
+        <div class="nav-buttons">
+            <a href="{{ url_for('login') }}">Login</a> |
+            <a href="{{ url_for('register') }}">Register</a>
+        </div>
+        {% endif %}
+    </nav>
+
+    {% if logged_in and user %}
+    <div class="container">
+        <h2>Welcome, {{ user.full_name or user.username }}!</h2>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+        <button onclick="logout()">Logout</button>
+    </div>
+    {% else %}
     <div class="container">
         <p>Please choose an option to get started:</p>
-        <!-- The buttons are now handled by the JavaScript -->
     </div>
+    {% endif %}
 </body>
 </html>
