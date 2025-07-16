@@ -117,6 +117,24 @@
                     }
                 });
             });
+
+            // Debounced AJAX live search
+            const searchInput = document.getElementById('search-input');
+            const booksTbody = document.getElementById('books-tbody');
+            let debounceTimeout = null;
+            if (searchInput && booksTbody) {
+                searchInput.addEventListener('input', function () {
+                    if (debounceTimeout) clearTimeout(debounceTimeout);
+                    debounceTimeout = setTimeout(function () {
+                        const query = searchInput.value;
+                        fetch(`/api/borrow_books?search=${encodeURIComponent(query)}`)
+                            .then(response => response.text())
+                            .then(html => {
+                                booksTbody.innerHTML = html;
+                            });
+                    }, 300);
+                });
+            }
         });
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/BorrowBooks.css') }}">
@@ -133,8 +151,8 @@
             <button type="button" id="verify-btn" onclick="verifyUserId()">Verify User ID</button>
         </div>
 
-        <form method="GET" action="{{ url_for('borrow_books') }}" class="search-form">
-            <input type="text" name="search" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
+        <form method="GET" action="{{ url_for('borrow_books') }}" class="search-form" id="search-form">
+            <input type="text" name="search" id="search-input" placeholder="Search by title, author, or book ID" value="{{ search_query }}">
             <button type="submit">Search</button>
         </form>
 
@@ -150,7 +168,7 @@
                     <th>Available Copies</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="books-tbody">
                 {% for book in books %}
                 <tr>
                     <td>
@@ -162,12 +180,14 @@
                     </td>
 
                     <td>{{ book.id }}</td>
-<td>
-    <img src="{{ url_for('static', filename='images/' ~ book.image_path) }}"
-         alt="{{ book.title }}"
-         onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/no_image_available.png') }}';"
-         width="50">
-</td>
+                    <td>
+                        <a href="{{ url_for('book', book_id=book.id) }}">
+                            <img src="{{ url_for('static', filename='images/' ~ (book.image_path or 'no_image_available.png')) }}"
+                                 alt="{{ book.title }}"
+                                 onerror="this.src='/static/images/no_image_available.png'"
+                                 width="50" />
+                        </a>
+                    </td>
                     <td>{{ book.title }}</td>
                     <td>{{ book.author }}</td>
                     <td>{{ book.total_copies }}</td>
