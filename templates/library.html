@@ -5,14 +5,6 @@
     <title>Library</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/Library.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-    <script type="text/javascript">
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
-        socket.on('new_books', function(data) {
-            console.log(data.message);
-            location.reload();
-        });
-    </script>
 </head>
 <body>
     <header>
