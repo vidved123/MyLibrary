@@ -197,15 +197,13 @@ def init_db():
 # Load session from JWT
 @app.before_request
 def load_user_from_token():
-    # Allow unauthenticated access to login, signup, and static files
-    if request.endpoint in ['login', 'static'] or request.path.startswith('/static/'):
+    # Allow unauthenticated access to login, signup, home, register, forgot_password, and static files
+    if request.endpoint in ['login', 'static', 'home', 'register', 'forgot_password'] or request.path.startswith('/static/'):
         return
-
     token = request.cookies.get('token')
     if token:
         try:
             payload = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
-
             session_id = payload.get('session_id')
             expected_hash = redis_store.get(session_id)
             if not expected_hash or expected_hash != sha256(token.encode()).hexdigest():
@@ -213,13 +211,10 @@ def load_user_from_token():
                 flash("Invalid session. Please log in again.", "error")
                 session.clear()
                 return redirect(url_for('login'))
-
             session['user_id'] = payload.get('user_id')
             session['role'] = payload.get('role', '').upper()
             session['session_id'] = session_id
-
             logger.debug(f"[JWT LOAD] Loaded session for user {session['user_id']}")
-
         except jwt.exceptions.InvalidTokenError as e:
             logger.warning(f"[JWT LOAD] Invalid token: {e}")
             session.clear()
@@ -231,7 +226,17 @@ def load_user_from_token():
 # Home route
 @app.route('/')
 def home():
-    return render_template('home.html', logged_in='user_id' in session)
+    user_id = session.get('user_id')
+    if user_id:
+        # Fetch user info from DB if you want to show profile details
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute('SELECT username, email, full_name, role FROM users WHERE id = %s', (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return render_template('home.html', logged_in=True, user=user)
+    return render_template('home.html', logged_in=False, user=None)
 
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
@@ -243,7 +248,7 @@ def login():
     password = request.form['password']
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     try:
         cursor.execute("SELECT id, password, role FROM users WHERE username = %s", (username,))
@@ -253,9 +258,11 @@ def login():
             flash('Invalid username or password.', 'error')
             return render_template('login.html')
 
-        user_id, hashed_password, role = user  # user is a tuple (id, password, role)
+        user_id = user.get('id')
+        hashed_password = user.get('password')
+        role = user.get('role')
 
-        if not hashed_password.startswith('$2b$'):
+        if not hashed_password or not hashed_password.startswith('$2b$'):
             flash('Invalid password format in database.', 'error')
             return render_template('login.html')
 
@@ -298,6 +305,48 @@ def login():
     finally:
         cursor.close()
         conn.close()
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not username or not new_password or not confirm_password:
+            flash('All fields are required.', 'error')
+            return render_template('forgot_password.html')
+
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('forgot_password.html')
+
+        if not is_complex_password(new_password):
+            flash('Password does not meet complexity requirements.', 'error')
+            return render_template('forgot_password.html')
+
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        try:
+            cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
+            user = cursor.fetchone()
+            if not user:
+                flash('User not found.', 'error')
+                return render_template('forgot_password.html')
+
+            hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            cursor.execute('UPDATE users SET password = %s WHERE username = %s', (hashed_password, username))
+            conn.commit()
+            flash('Password reset successful! Please log in.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            conn.rollback()
+            flash('An error occurred. Please try again.', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+        return render_template('forgot_password.html')
+    return render_template('forgot_password.html')
 
 
 
@@ -1547,6 +1596,77 @@ def is_complex_password(password):
     if not any(char in "!@#$%^&*()_+-=[]{}|;:,.<>?/~" for char in password):
         return False
     return True
+
+
+# --- API endpoint for AJAX live search in view_books ---
+@app.route('/api/books')
+@token_required
+def api_books(user_id):
+    search_query = request.args.get('search', '')
+
+    def get_books_from_your_db(search_query):
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        try:
+            if search_query:
+                cursor.execute(
+                    "SELECT id AS book_id, title, author, total_copies, available_copies FROM books WHERE title LIKE %s OR author LIKE %s ORDER BY title ASC",
+                    (f"%{search_query}%", f"%{search_query}%")
+                )
+            else:
+                cursor.execute(
+                    "SELECT id AS book_id, title, author, total_copies, available_copies FROM books ORDER BY title ASC"
+                )
+            books = cursor.fetchall()
+        finally:
+            cursor.close()
+            conn.close()
+        return books
+
+    books = get_books_from_your_db(search_query)
+    for book in books:
+        if isinstance(book, dict) and 'title' in book:
+            book['image_path'] = generate_image_filename(book['title'])
+    role = session.get('role')
+    is_admin = (role == 'ADMIN')
+    return render_template('partials/books_tbody.html', books=books, is_admin=is_admin)
+
+# --- API endpoint for AJAX live search in borrow_books ---
+@app.route('/api/borrow_books')
+@token_required
+def api_borrow_books(user_id):
+    search_query = request.args.get('search', '').strip()
+    conn = None
+    cursor = None
+    books = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        query = '''
+            SELECT b.id, b.title, b.author,
+                   COUNT(i.id) AS total_copies,
+                   SUM(CASE WHEN i.status = 'available' THEN 1 ELSE 0 END) AS available_copies
+            FROM books b
+            LEFT JOIN inventory i ON b.id = i.book_id
+            WHERE b.title LIKE %s OR b.author LIKE %s OR b.id = %s
+            GROUP BY b.id, b.title, b.author
+        '''
+        cursor.execute(query, (f'%{search_query}%', f'%{search_query}%', search_query))
+        books = cursor.fetchall()
+        for book in books:
+            if isinstance(book, dict) and 'title' in book:
+                book['image_path'] = generate_image_filename(book['title'])
+    except pymysql.MySQLError as e:
+        pass
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+    return render_template('partials/borrow_books_tbody.html', books=books, role=session.get('role'))
+
+
+
 
 
 if __name__ == '__main__':
